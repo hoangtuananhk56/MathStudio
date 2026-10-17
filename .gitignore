@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-offline/
+public/mathlive/
+public/fonts/
+*.log
+.devlog/
+dist-tools/

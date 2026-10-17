@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Development manifest: served from https://localhost:3000 (npm run dev:https).
+  Production builds replace the host with the public (AppSource) or local (offline installer) origin.
+-->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>10537b7b-a865-4f8a-a816-4dd0a9234015</Id>
+  <Version>1.3.0.0</Version>
+  <ProviderName>MathStudio</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="MathStudio" />
+  <Description DefaultValue="Write beautiful math equations that stay editable in Word.">
+    <Override Locale="vi-VN" Value="Soạn công thức Toán đẹp như sách giáo khoa, sửa được ngay trong Word." />
+  </Description>
+  <IconUrl DefaultValue="https://localhost:3000/assets/logo-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/logo-64.png" />
+  <SupportUrl DefaultValue="https://localhost:3000/taskpane/index.html" />
+  <AppDomains>
+    <AppDomain>https://localhost:3000</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="WordApi" MinVersion="1.3" />
+    </Sets>
+  </Requirements>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3000/taskpane/index.html" />
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="Taskpane.Url" />
+          </GetStarted>
+          <FunctionFile resid="Commands.Url" />
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <CustomTab id="MathStudio.Tab">
+              <Group id="MathStudio.InsertGroup">
+                <Label resid="Group.Insert" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.Logo.16" />
+                  <bt:Image size="32" resid="Icon.Logo.32" />
+                  <bt:Image size="80" resid="Icon.Logo.80" />
+                </Icon>
+                <Control xsi:type="Button" id="MathStudio.Inline">
+                  <Label resid="Inline.Label" />
+                  <Supertip>
+                    <Title resid="Inline.Label" />
+                    <Description resid="Inline.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Inline.16" />
+                    <bt:Image size="32" resid="Icon.Inline.32" />
+                    <bt:Image size="80" resid="Icon.Inline.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>insertInlineEquation</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.Display">
+                  <Label resid="Display.Label" />
+                  <Supertip>
+                    <Title resid="Display.Label" />
+                    <Description resid="Display.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Display.16" />
+                    <bt:Image size="32" resid="Icon.Display.32" />
+                    <bt:Image size="80" resid="Icon.Display.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>insertDisplayEquation</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.RightNumbered">
+                  <Label resid="RightNumbered.Label" />
+                  <Supertip>
+                    <Title resid="RightNumbered.Label" />
+                    <Description resid="RightNumbered.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Right.16" />
+                    <bt:Image size="32" resid="Icon.Right.32" />
+                    <bt:Image size="80" resid="Icon.Right.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>insertRightNumberedEquation</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.LeftNumbered">
+                  <Label resid="LeftNumbered.Label" />
+                  <Supertip>
+                    <Title resid="LeftNumbered.Label" />
+                    <Description resid="LeftNumbered.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Left.16" />
+                    <bt:Image size="32" resid="Icon.Left.32" />
+                    <bt:Image size="80" resid="Icon.Left.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>insertLeftNumberedEquation</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="MathStudio.EquationGroup">
+                <Label resid="Group.Equation" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.Edit.16" />
+                  <bt:Image size="32" resid="Icon.Edit.32" />
+                  <bt:Image size="80" resid="Icon.Edit.80" />
+                </Icon>
+                <Control xsi:type="Button" id="MathStudio.Edit">
+                  <Label resid="Edit.Label" />
+                  <Supertip>
+                    <Title resid="Edit.Label" />
+                    <Description resid="Edit.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Edit.16" />
+                    <bt:Image size="32" resid="Icon.Edit.32" />
+                    <bt:Image size="80" resid="Icon.Edit.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>editEquation</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.ToggleTex">
+                  <Label resid="ToggleTex.Label" />
+                  <Supertip>
+                    <Title resid="ToggleTex.Label" />
+                    <Description resid="ToggleTex.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Tex.16" />
+                    <bt:Image size="32" resid="Icon.Tex.32" />
+                    <bt:Image size="80" resid="Icon.Tex.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>toggleTex</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.Convert">
+                  <Label resid="Convert.Label" />
+                  <Supertip>
+                    <Title resid="Convert.Label" />
+                    <Description resid="Convert.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Convert.16" />
+                    <bt:Image size="32" resid="Icon.Convert.32" />
+                    <bt:Image size="80" resid="Icon.Convert.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>convertEquation</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.Renumber">
+                  <Label resid="Renumber.Label" />
+                  <Supertip>
+                    <Title resid="Renumber.Label" />
+                    <Description resid="Renumber.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Renumber.16" />
+                    <bt:Image size="32" resid="Icon.Renumber.32" />
+                    <bt:Image size="80" resid="Icon.Renumber.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>updateEquationNumbers</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="MathStudio.ConvertGroup">
+                <Label resid="Group.Convert" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.MathType.16" />
+                  <bt:Image size="32" resid="Icon.MathType.32" />
+                  <bt:Image size="80" resid="Icon.MathType.80" />
+                </Icon>
+                <Control xsi:type="Button" id="MathStudio.MathType">
+                  <Label resid="MathType.Label" />
+                  <Supertip>
+                    <Title resid="MathType.Label" />
+                    <Description resid="MathType.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.MathType.16" />
+                    <bt:Image size="32" resid="Icon.MathType.32" />
+                    <bt:Image size="80" resid="Icon.MathType.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>MathStudio.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="MathStudio.HelpGroup">
+                <Label resid="Group.Help" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.Help.16" />
+                  <bt:Image size="32" resid="Icon.Help.32" />
+                  <bt:Image size="80" resid="Icon.Help.80" />
+                </Icon>
+                <Control xsi:type="Button" id="MathStudio.Help">
+                  <Label resid="Help.Label" />
+                  <Supertip>
+                    <Title resid="Help.Label" />
+                    <Description resid="Help.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Help.16" />
+                    <bt:Image size="32" resid="Icon.Help.32" />
+                    <bt:Image size="80" resid="Icon.Help.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>MathStudio.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+              <Label resid="Tab.Label" />
+            </CustomTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.Logo.16" DefaultValue="https://localhost:3000/assets/logo-16.png" />
+        <bt:Image id="Icon.Logo.32" DefaultValue="https://localhost:3000/assets/logo-32.png" />
+        <bt:Image id="Icon.Logo.80" DefaultValue="https://localhost:3000/assets/logo-80.png" />
+        <bt:Image id="Icon.Inline.16" DefaultValue="https://localhost:3000/assets/inline-16.png" />
+        <bt:Image id="Icon.Inline.32" DefaultValue="https://localhost:3000/assets/inline-32.png" />
+        <bt:Image id="Icon.Inline.80" DefaultValue="https://localhost:3000/assets/inline-80.png" />
+        <bt:Image id="Icon.Display.16" DefaultValue="https://localhost:3000/assets/display-16.png" />
+        <bt:Image id="Icon.Display.32" DefaultValue="https://localhost:3000/assets/display-32.png" />
+        <bt:Image id="Icon.Display.80" DefaultValue="https://localhost:3000/assets/display-80.png" />
+        <bt:Image id="Icon.Right.16" DefaultValue="https://localhost:3000/assets/right-16.png" />
+        <bt:Image id="Icon.Right.32" DefaultValue="https://localhost:3000/assets/right-32.png" />
+        <bt:Image id="Icon.Right.80" DefaultValue="https://localhost:3000/assets/right-80.png" />
+        <bt:Image id="Icon.Left.16" DefaultValue="https://localhost:3000/assets/left-16.png" />
+        <bt:Image id="Icon.Left.32" DefaultValue="https://localhost:3000/assets/left-32.png" />
+        <bt:Image id="Icon.Left.80" DefaultValue="https://localhost:3000/assets/left-80.png" />
+        <bt:Image id="Icon.Edit.16" DefaultValue="https://localhost:3000/assets/edit-16.png" />
+        <bt:Image id="Icon.Edit.32" DefaultValue="https://localhost:3000/assets/edit-32.png" />
+        <bt:Image id="Icon.Edit.80" DefaultValue="https://localhost:3000/assets/edit-80.png" />
+        <bt:Image id="Icon.Tex.16" DefaultValue="https://localhost:3000/assets/tex-16.png" />
+        <bt:Image id="Icon.Tex.32" DefaultValue="https://localhost:3000/assets/tex-32.png" />
+        <bt:Image id="Icon.Tex.80" DefaultValue="https://localhost:3000/assets/tex-80.png" />
+        <bt:Image id="Icon.Renumber.16" DefaultValue="https://localhost:3000/assets/renumber-16.png" />
+        <bt:Image id="Icon.Renumber.32" DefaultValue="https://localhost:3000/assets/renumber-32.png" />
+        <bt:Image id="Icon.Renumber.80" DefaultValue="https://localhost:3000/assets/renumber-80.png" />
+        <bt:Image id="Icon.Help.16" DefaultValue="https://localhost:3000/assets/help-16.png" />
+        <bt:Image id="Icon.Help.32" DefaultValue="https://localhost:3000/assets/help-32.png" />
+        <bt:Image id="Icon.Help.80" DefaultValue="https://localhost:3000/assets/help-80.png" />
+        <bt:Image id="Icon.Convert.16" DefaultValue="https://localhost:3000/assets/convert-16.png" />
+        <bt:Image id="Icon.Convert.32" DefaultValue="https://localhost:3000/assets/convert-32.png" />
+        <bt:Image id="Icon.Convert.80" DefaultValue="https://localhost:3000/assets/convert-80.png" />
+        <bt:Image id="Icon.MathType.16" DefaultValue="https://localhost:3000/assets/mathtype-16.png" />
+        <bt:Image id="Icon.MathType.32" DefaultValue="https://localhost:3000/assets/mathtype-32.png" />
+        <bt:Image id="Icon.MathType.80" DefaultValue="https://localhost:3000/assets/mathtype-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands/index.html" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane/index.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Tab.Label" DefaultValue="MathStudio" />
+        <bt:String id="GetStarted.Title" DefaultValue="MathStudio is ready!">
+          <bt:Override Locale="vi-VN" Value="MathStudio đã sẵn sàng!" />
+        </bt:String>
+        <bt:String id="Group.Insert" DefaultValue="Insert Equations">
+          <bt:Override Locale="vi-VN" Value="Chèn công thức" />
+        </bt:String>
+        <bt:String id="Group.Equation" DefaultValue="Equations">
+          <bt:Override Locale="vi-VN" Value="Công thức" />
+        </bt:String>
+        <bt:String id="Group.Help" DefaultValue="Help">
+          <bt:Override Locale="vi-VN" Value="Trợ giúp" />
+        </bt:String>
+        <bt:String id="Inline.Label" DefaultValue="Inline">
+          <bt:Override Locale="vi-VN" Value="Trong dòng" />
+        </bt:String>
+        <bt:String id="Display.Label" DefaultValue="Display">
+          <bt:Override Locale="vi-VN" Value="Riêng dòng" />
+        </bt:String>
+        <bt:String id="RightNumbered.Label" DefaultValue="Right Numbered">
+          <bt:Override Locale="vi-VN" Value="Đánh số phải" />
+        </bt:String>
+        <bt:String id="LeftNumbered.Label" DefaultValue="Left Numbered">
+          <bt:Override Locale="vi-VN" Value="Đánh số trái" />
+        </bt:String>
+        <bt:String id="Edit.Label" DefaultValue="Edit Equation">
+          <bt:Override Locale="vi-VN" Value="Sửa công thức" />
+        </bt:String>
+        <bt:String id="ToggleTex.Label" DefaultValue="Toggle TeX">
+          <bt:Override Locale="vi-VN" Value="Chuyển TeX" />
+        </bt:String>
+        <bt:String id="Renumber.Label" DefaultValue="Update Numbers">
+          <bt:Override Locale="vi-VN" Value="Cập nhật số" />
+        </bt:String>
+        <bt:String id="Help.Label" DefaultValue="Guide">
+          <bt:Override Locale="vi-VN" Value="Hướng dẫn" />
+        </bt:String>
+        <bt:String id="Convert.Label" DefaultValue="Picture / Equation">
+          <bt:Override Locale="vi-VN" Value="Đổi dạng" />
+        </bt:String>
+        <bt:String id="Group.Convert" DefaultValue="Convert">
+          <bt:Override Locale="vi-VN" Value="Chuyển đổi" />
+        </bt:String>
+        <bt:String id="MathType.Label" DefaultValue="MathType ⇄">
+          <bt:Override Locale="vi-VN" Value="MathType ⇄" />
+        </bt:String>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Open the MathStudio tab to write your first equation.">
+          <bt:Override Locale="vi-VN" Value="Mở tab MathStudio để soạn công thức đầu tiên." />
+        </bt:String>
+        <bt:String id="Inline.Tip" DefaultValue="Insert an equation in the current line of text (MathType: Ctrl+Alt+Q).">
+          <bt:Override Locale="vi-VN" Value="Chèn công thức nằm trong dòng chữ hiện tại." />
+        </bt:String>
+        <bt:String id="Display.Tip" DefaultValue="Insert a centered equation on its own line.">
+          <bt:Override Locale="vi-VN" Value="Chèn công thức căn giữa trên một dòng riêng." />
+        </bt:String>
+        <bt:String id="RightNumbered.Tip" DefaultValue="Insert a display equation numbered on the right, e.g. (1).">
+          <bt:Override Locale="vi-VN" Value="Chèn công thức riêng dòng có số thứ tự bên phải, ví dụ (1)." />
+        </bt:String>
+        <bt:String id="LeftNumbered.Tip" DefaultValue="Insert a display equation numbered on the left.">
+          <bt:Override Locale="vi-VN" Value="Chèn công thức riêng dòng có số thứ tự bên trái." />
+        </bt:String>
+        <bt:String id="Edit.Tip" DefaultValue="Put the cursor in an equation, then click to edit it.">
+          <bt:Override Locale="vi-VN" Value="Đặt con trỏ vào công thức rồi bấm để sửa." />
+        </bt:String>
+        <bt:String id="ToggleTex.Tip" DefaultValue="Turn the selected equation into $TeX$ text, or selected $TeX$ text into an equation.">
+          <bt:Override Locale="vi-VN" Value="Đổi công thức đang chọn thành mã $TeX$, hoặc đổi mã $TeX$ đang chọn thành công thức." />
+        </bt:String>
+        <bt:String id="Renumber.Tip" DefaultValue="Renumber all numbered equations in document order.">
+          <bt:Override Locale="vi-VN" Value="Đánh lại số thứ tự cho mọi công thức có đánh số theo thứ tự trong tài liệu." />
+        </bt:String>
+        <bt:String id="Help.Tip" DefaultValue="Tips, shortcuts and math fonts.">
+          <bt:Override Locale="vi-VN" Value="Mẹo, phím tắt và phông chữ toán." />
+        </bt:String>
+        <bt:String id="Convert.Tip" DefaultValue="Switch the selected equation between a MathType-style picture and a native Word equation.">
+          <bt:Override Locale="vi-VN" Value="Chuyển công thức đang chọn giữa dạng ảnh (giống MathType) và dạng công thức Word." />
+        </bt:String>
+        <bt:String id="MathType.Tip" DefaultValue="Convert MathType equations in this document to MathStudio, or prepare MathStudio equations for MathType.">
+          <bt:Override Locale="vi-VN" Value="Chuyển công thức MathType trong tài liệu sang MathStudio, hoặc chuẩn bị công thức MathStudio để chuyển sang MathType." />
+        </bt:String>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

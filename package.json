@@ -18,7 +18,7 @@
     "hotkeys": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/hotkeys-win/build.ps1 && start \"\" dist-tools/MathStudioHotkeys.exe"
   },
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@mathjax/mathjax-newcm-font": "^4.1.3",

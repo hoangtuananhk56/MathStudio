@@ -111,3 +111,13 @@ Phông phải được cài trên máy để hiển thị đúng; máy chưa cà
 - [x] Giai đoạn 1–2: nền tảng add-in, trình soạn công thức, chèn và sửa công thức OMML
 - [ ] Bản offline: mirror Office.js cùng một server HTTPS cục bộ; bộ cài `.msi` (Windows) và `.pkg` (macOS) tự đăng ký add-in và cài phông
 - [ ] Giai đoạn 3: vẽ hình học (dựng hình động, xuất SVG kèm trạng thái để sửa lại)
+
+## Giấy phép
+
+Mã nguồn MathStudio phát hành theo giấy phép [MIT](LICENSE).
+
+Các phông trong `vendor/fonts/` giữ giấy phép riêng:
+- STIX Two Math: SIL Open Font License 1.1
+- TeX Gyre Termes Math và Latin Modern Math: GUST Font License
+
+Các thư viện dùng kèm (MathLive, Temml, MathJax, React, cfb, fflate…) giữ giấy phép của từng thư viện.

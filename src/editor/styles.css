@@ -519,3 +519,27 @@ button {
     transition: none !important;
   }
 }
+
+/* "restore unsaved work" offer (equation and figure editors) */
+.draft-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.draft-banner > span {
+  flex: 1;
+  min-width: 200px;
+}
+
+.draft-btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.draft-dismiss {
+  background: transparent;
+  color: inherit;
+}

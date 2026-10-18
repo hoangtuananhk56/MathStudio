@@ -5,6 +5,7 @@ import { renderSvg } from '../core/render-svg';
 import { buildPagePackage } from '../core/page-ooxml';
 import { LOW_CONFIDENCE, OcrPanel } from '../ocr/OcrPanel';
 import { OCR_IMAGE_KEY, type DialogMessage, type EditorInit } from '../shared/protocol';
+import { clearDraft, DraftBanner, useDraftOffer, useDraftSaver } from '../shared/draft';
 import { loadSettings, saveSettings, type Settings } from '../shared/settings';
 import { MenuBar, Modal, PaletteButton, Segmented, Tile, type MenuDef } from './components';
 import { isFontInstalled } from './font-check';
@@ -15,6 +16,8 @@ import { createShortcutHandler, SHORTCUT_SHEET, type Chord, type MathStyle } fro
 import { PALETTE } from './palette';
 
 const SIZES = [0, 10, 11, 12, 13, 14, 16, 18, 20, 24];
+/** Where the equation being typed is kept until it reaches Word (see shared/draft). */
+const DRAFT_KEY = 'mathstudio.draft.equation';
 const ZOOMS = [100, 150, 200, 300, 400];
 const STYLE_KEYS: Record<MathStyle, Parameters<typeof t>[1]> = {
   math: 'sMath', text: 'sText', function: 'sFunction', variable: 'sVariable', greek: 'sGreek', vector: 'sVector', number: 'sNumber',
@@ -39,7 +42,7 @@ function copyText(text: string): void {
   ta.remove();
 }
 
-export function App({ init, send }: Props) {
+export function App({ init, send: sendToWord }: Props) {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [layout, setLayout] = useState<Layout>(init.layout);
   const [kind, setKind] = useState<RenderKind>(() => init.kind ?? loadSettings().kind);
@@ -68,6 +71,19 @@ export function App({ init, send }: Props) {
   });
   const editor = useRef<MathEditorHandle>(null);
   const greekNext = useRef(false);
+
+  // unsaved work survives a lost dialog; a new equation offers to bring it back
+  const [draft, dropDraft] = useDraftOffer<{ latex: string; layout: Layout }>(DRAFT_KEY, init.mode === 'insert' && !init.latex.trim() && !init.ocr && !init.error);
+  useEffect(() => {
+    if (draft && latex.trim() !== init.latex.trim()) dropDraft(); // typing a new one: that is the answer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latex]);
+  const work = useMemo(() => (latex.trim() ? { latex, layout } : null), [latex, layout]);
+  useDraftSaver(DRAFT_KEY, work, !draft);
+  const send = (msg: DialogMessage) => {
+    clearDraft(DRAFT_KEY);
+    sendToWord?.(msg);
+  };
   const lang = settings.lang;
 
   const update = (patch: Partial<Settings>) =>
@@ -126,7 +142,7 @@ export function App({ init, send }: Props) {
       setError(`${t(lang, 'invalid')}: ${e instanceof Error ? e.message.replace(/^.*?Error:\s*/, '') : e}`);
       return;
     }
-    if (send) {
+    if (sendToWord) {
       send({ type: 'insert', latex: value, ...opts });
       return;
     }
@@ -140,7 +156,7 @@ export function App({ init, send }: Props) {
     }
   }
 
-  const cancel = () => send?.({ type: 'cancel' });
+  const cancel = () => send({ type: 'cancel' });
 
   // A picture pasted into the editor is read as a formula (MathLive would ignore it).
   const ocrOpen = useRef(false);
@@ -198,7 +214,7 @@ export function App({ init, send }: Props) {
       id: 'file', label: t(lang, 'mFile'),
       entries: [
         { label: t(lang, init.mode === 'edit' ? 'updateClose' : 'insertClose'), shortcut: 'Ctrl+S', onClick: submit },
-        { label: t(lang, 'closeNoSave'), shortcut: 'Ctrl+F4', onClick: cancel, disabled: !send },
+        { label: t(lang, 'closeNoSave'), shortcut: 'Ctrl+F4', onClick: cancel, disabled: !sendToWord },
         'separator',
         { label: t(lang, 'fromPictureMenu'), onClick: () => setOcr({ image: null }) },
         'separator',
@@ -414,6 +430,24 @@ export function App({ init, send }: Props) {
         )}
       </section>
 
+      {draft && (
+        <DraftBanner
+          lang={lang}
+          at={draft.at}
+          what={['công thức đang soạn dở', 'an unfinished equation']}
+          onRestore={() => {
+            editor.current?.setLatex(draft.value.latex);
+            setLatex(draft.value.latex);
+            setLayout(draft.value.layout);
+            dropDraft();
+            editor.current?.focus();
+          }}
+          onDismiss={() => {
+            clearDraft(DRAFT_KEY);
+            dropDraft();
+          }}
+        />
+      )}
       {error && (
         <div className="banner banner-error" role="alert">
           {error}
@@ -512,7 +546,7 @@ export function App({ init, send }: Props) {
           pageAction={t(lang, 'ocrInsertPage')}
           figureAction={t(lang, 'ocrOpenFigure')}
           onFigure={(construction) => {
-            if (send) {
+            if (sendToWord) {
               send({ type: 'openFigure', construction });
               return;
             }
@@ -536,7 +570,7 @@ export function App({ init, send }: Props) {
           }}
           onPage={(paragraphs) => {
             const style = { fontId: settings.fontId, sizePt: settings.sizePt || undefined };
-            if (send) {
+            if (sendToWord) {
               send({ type: 'insertPage', paragraphs, ...style });
               return;
             }

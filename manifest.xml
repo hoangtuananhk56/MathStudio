@@ -38,13 +38,18 @@
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Hosts>
       <Host xsi:type="Document">
+        <!-- one long-lived runtime (the task pane page) for the ribbon buttons and the task pane,
+             where Word supports it (SharedRuntime 1.1); older Word runs the function file alone -->
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" lifetime="long" />
+        </Runtimes>
         <DesktopFormFactor>
           <GetStarted>
             <Title resid="GetStarted.Title" />
             <Description resid="GetStarted.Description" />
             <LearnMoreUrl resid="Taskpane.Url" />
           </GetStarted>
-          <FunctionFile resid="Commands.Url" />
+          <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="MathStudio.Tab">
               <Group id="MathStudio.InsertGroup">
@@ -255,7 +260,6 @@
                     <bt:Image size="80" resid="Icon.MathType.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>MathStudio.Taskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>
@@ -279,7 +283,6 @@
                     <bt:Image size="80" resid="Icon.Help.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>MathStudio.Taskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>

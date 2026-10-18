@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../editor/styles.css';
+// the ribbon buttons run here (the shared runtime): see manifest <Runtimes>
+import '../commands/commands';
 import './taskpane.css';
 import { MATH_FONTS } from '../core/equation';
 import { convertMathTypeDocx, countMathTypeEquations, type MathTypeConvertReport } from '../core/docx-mathtype';

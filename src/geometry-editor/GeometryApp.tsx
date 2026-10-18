@@ -9,6 +9,7 @@ import {
 } from '../geometry/tools';
 import { OCR_IMAGE_KEY, type GeometryInit, type GeometryMessage } from '../shared/protocol';
 import { OcrPanel } from '../ocr/OcrPanel';
+import { clearDraft, DraftBanner, useDraftOffer, useDraftSaver } from '../shared/draft';
 import { pageToPlain } from '../ocr/page';
 import { loadSettings, saveSettings, type Lang } from '../shared/settings';
 import { ToolIcon } from './icons';
@@ -161,6 +162,9 @@ interface AskState {
   error?: string | null;
 }
 
+/** Where the figure being drawn is kept until it reaches Word (see shared/draft). */
+const DRAFT_KEY = 'mathstudio.draft.figure';
+
 export function GeometryApp({ init, send }: Props) {
   const [lang, setLang] = useState<Lang>(loadSettings().lang);
   // School year: which tools are shown; years 2–5 get the big, simple layout.
@@ -174,6 +178,20 @@ export function GeometryApp({ init, send }: Props) {
   const hist = useHistory(init.construction ?? { ...emptyConstruction(), grid: primary });
   const c = hist.c;
   const values = useMemo(() => computeAll(c), [c]);
+
+  // unsaved work survives a lost dialog; a new figure offers to bring it back
+  const newFigure = init.mode === 'insert' && !init.construction && !init.exercise && !init.ocr;
+  const [draft, dropDraft] = useDraftOffer<Construction>(DRAFT_KEY, newFigure);
+  const startC = useRef(c);
+  useEffect(() => {
+    if (draft && c !== startC.current) dropDraft(); // new work started: that is the answer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c]);
+  useDraftSaver(DRAFT_KEY, c.objects.some((o) => !o.style.hidden) ? c : null, !draft);
+  const cancel = () => {
+    clearDraft(DRAFT_KEY);
+    send?.({ type: 'cancel' });
+  };
 
   const [tool, setTool] = useState<ToolId>('move');
   const [groupTool, setGroupTool] = useState<Record<string, ToolId>>({});
@@ -1010,6 +1028,7 @@ export function GeometryApp({ init, send }: Props) {
       return;
     }
     const out: Construction = { ...con, view: { xmin: view.xmin, xmax: view.xmax, ymin: view.ymin, ymax: view.ymax } };
+    clearDraft(DRAFT_KEY);
     if (send) send({ type: 'insertGeometry', construction: out });
     else setMessage(`(${lang === 'vi' ? 'chế độ thử' : 'preview'}) ${out.objects.length} objects`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1029,7 +1048,7 @@ export function GeometryApp({ init, send }: Props) {
       } else if (e.key === 'Escape' && !ask) {
         if (picks.length) resetPicks();
         else if (tool !== 'move') setTool('move');
-        else send?.({ type: 'cancel' });
+        else cancel();
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selIds.length && !typing) {
         hist.commit(selIds.reduce((con, id) => deleteWithDependents(con, id, dependencies), hist.snapshot()));
         selectOnly([]);
@@ -1280,6 +1299,23 @@ export function GeometryApp({ init, send }: Props) {
           </button>
         </div>
       </header>
+      {draft && (
+        <DraftBanner
+          lang={lang}
+          at={draft.at}
+          what={['hình vẽ dở', 'an unfinished figure']}
+          onRestore={() => {
+            hist.commit(draft.value);
+            startC.current = draft.value;
+            dropDraft();
+            setFitSoon(true);
+          }}
+          onDismiss={() => {
+            clearDraft(DRAFT_KEY);
+            dropDraft();
+          }}
+        />
+      )}
 
       <div className="geo-body">
         <nav className="geo-tools" aria-label="Tools">
@@ -1519,7 +1555,7 @@ export function GeometryApp({ init, send }: Props) {
           <span className="hint geo-hint">{hint}</span>
         </div>
         <div className="geo-status-right">
-          <button className="btn btn-tonal" onClick={() => send?.({ type: 'cancel' })}>{t('cancel')}</button>
+          <button className="btn btn-tonal" onClick={cancel}>{t('cancel')}</button>
           <button className="btn btn-primary" onClick={submit} title="Ctrl+S">{t(init.mode === 'edit' ? 'update' : 'insert')}</button>
         </div>
       </footer>

@@ -95,6 +95,32 @@ Kiểm tra với một tài liệu thật:
 MT_DOCX=path/to/file.docx npx vitest run tests/docx-mathtype.test.ts   # ghi ra file-omml.docx và file-image.docx
 ```
 
+## Nhận diện từ ảnh (OCR, chạy offline)
+
+Nút **Từ ảnh** trên Ribbon (hoặc nút **Từ ảnh** trong trình soạn, hay dán ảnh bằng Ctrl+V) đọc ảnh chụp sách, đề thi, ảnh quét, ảnh màn hình. Nếu đang chọn một ảnh trong tài liệu thì ảnh đó được đọc luôn. Kéo chuột trên ảnh để chỉ đọc một vùng.
+
+- **Một công thức**: ra LaTeX, nạp thẳng vào trình soạn để sửa rồi chèn như công thức gõ tay.
+- **Cả đề bài (chữ + công thức)**: ra đoạn văn tiếng Việt có công thức `$…$` / `$$…$$`; sửa trong ô kết quả (có xem trước, công thức nên xem lại được tô vàng) rồi **Chèn vào tài liệu**: chữ thành chữ, mỗi công thức thành công thức MathStudio (sửa lại được). Công thức chèn kiểu này là công thức Word; muốn dạng ảnh thì dùng **Đổi dạng**.
+- **Hình vẽ**: ảnh một hình hình học (ảnh trong phiếu, ảnh quét, ảnh chụp sách) được dựng lại thành hình động: tên điểm, đoạn thẳng (liền, đứt), điểm nằm trên cạnh, giao điểm có tên, đường tròn, số đo trên cạnh, kí hiệu góc, góc vuông, cạnh bằng nhau, vùng tô màu. Cạnh gần ngang / dọc được làm ngang / dọc hẳn; đường ghi kích thước có mũi tên trao số đo cho cạnh nó chỉ. Trong trình vẽ hình: nút **Từ ảnh** (hoặc dán ảnh), hay chọn ảnh trong Word rồi bấm **Vẽ hình**; từ trình soạn công thức: **Mở trong trình vẽ hình**. Ảnh chụp thật (không phải hình vẽ) được nhận ra và từ chối.
+- **Vẽ hình từ đề**: trong trình vẽ hình, tab *Gõ đề bài* ▸ **Lấy đề từ ảnh** (hoặc **Từ ảnh** ▸ *Cả đề bài*) đọc đề rồi dựng hình như khi gõ đề.
+
+Ảnh chỉ nằm trong bộ nhớ của hộp thoại khi đang mở; ảnh chọn trong Word được chuyển cho hộp thoại qua `localStorage` và xóa ngay khi hộp thoại mở (và khi nó đóng). Không ảnh nào được lưu lại hay gửi đi.
+
+Mọi thứ chạy trong add-in, không gửi ảnh đi đâu:
+
+| Phần | Cách làm |
+|---|---|
+| Công thức | Pix2Text MFR 1.5 (MIT), lượng tử hóa int8 (31 MB), chạy bằng onnxruntime-web trong Web Worker (`src/ocr/formula-model.ts`) |
+| Chữ tiếng Việt | Tesseract.js (Apache-2.0) với dữ liệu `vie` (LSTM, 1,4 MB) |
+| Tìm công thức trong trang | `src/ocr/page-layout.ts`: từ đọc kém tin cậy, ký hiệu lạ, nét mực cao hơn dòng, gạch phân số, mảnh tử/mẫu số; phần mực không thuộc dòng chữ nào là công thức riêng dòng |
+| Ảnh chụp | Cân sáng theo vùng, tự chỉnh nghiêng (`src/ocr/image.ts`) |
+| Hình vẽ | `src/ocr/figure-vision.ts`: nét vẽ (bỏ vùng tô, bỏ chữ), làm mảnh nét, đoạn thẳng bằng biến đổi Hough, đường tròn; `figure-build.ts`: đỉnh, điểm trên cạnh, giao điểm, tên, số đo, kí hiệu, vùng tô → hình dựng động. Tên điểm (chữ in nghiêng) đọc bằng model công thức, số đo và chữ bằng Tesseract |
+| Chuẩn hóa LaTeX | `\operatorname{s i n}` → `\sin`, `\left\{\begin{matrix}` → `cases`, bỏ chữ đậm giả, `\widehat{ABC}`, `60^\circ` (`src/ocr/latex-clean.ts`) |
+
+Model nằm trong `vendor/models/mfr/` (dựng lại bằng `scripts/build-ocr-model.py`); `npm run assets` chép model, Tesseract và dữ liệu tiếng Việt vào `public/ocr/`. Lần dùng đầu tải khoảng 50 MB từ chính add-in rồi lưu lại (Cache Storage). Cần Word dùng WebView2 (Microsoft 365 / Office 2021 trở lên).
+
+Kiểm tra: `npx vitest run tests/ocr-*.test.ts` chạy model và Tesseract thật trên ảnh mẫu trong `tests/ocr/samples/` (công thức in, ảnh giả lập chụp điện thoại, đề nhiều dòng) và trên các hình mẫu của trình vẽ hình (vẽ ra ảnh rồi đọc lại, so tên điểm và cạnh).
+
 ## Trải nghiệm giống MathType
 
 | MathType | MathStudio |
@@ -134,10 +160,12 @@ OMML ── src/core/ooxml.ts ──► gói Flat-OPC + Content Control (tag = L
 | `src/core/` | Lõi chuyển đổi, thuần TypeScript, có test |
 | `src/office/` | Thao tác với Word (WordApi 1.3) và mở hộp thoại soạn thảo |
 | `src/editor/` | Hộp thoại soạn công thức (React + MathLive) |
+| `src/ocr/` | Nhận diện công thức và đề bài từ ảnh (offline) |
 | `src/commands/` | Hàm xử lý các nút trên Ribbon |
 | `src/taskpane/` | Khung "Hướng dẫn" và tải phông |
 | `manifest.xml` | Manifest add-in (bản phát triển, `https://localhost:3000`) |
 | `vendor/fonts/` | Phông toán học: STIX Two Math (OFL), TeX Gyre Termes Math và Latin Modern Math (GUST) |
+| `vendor/models/` | Model nhận diện công thức (Pix2Text MFR, MIT) |
 | `scripts/` | Chép tài nguyên, tạo icon, script dựng thử trên Word (COM) |
 
 ## Lệnh
@@ -184,5 +212,7 @@ Mã nguồn MathStudio phát hành theo giấy phép [MIT](LICENSE).
 Các phông trong `vendor/fonts/` giữ giấy phép riêng:
 - STIX Two Math: SIL Open Font License 1.1
 - TeX Gyre Termes Math và Latin Modern Math: GUST Font License
+
+Model trong `vendor/models/mfr/` là Pix2Text MFR 1.5 của BreezeDeus, giấy phép MIT (`vendor/models/mfr/LICENSE-Pix2Text.txt`). Tesseract.js, tesseract.js-core và dữ liệu `vie`: Apache-2.0 / MIT. ONNX Runtime Web: MIT.
 
 Các thư viện dùng kèm (MathLive, Temml, MathJax, React, cfb, fflate…) giữ giấy phép của từng thư viện.

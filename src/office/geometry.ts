@@ -4,7 +4,9 @@ import { wrapInContentControl } from '../core/ooxml';
 import { computeAll } from '../geometry/engine';
 import type { Construction } from '../geometry/model';
 import { decodeConstructionFromOoxml, PX_PER_CM, renderConstruction } from '../geometry/render';
-import { encodeGeometryInit, type GeometryInit, type GeometryMessage } from '../shared/protocol';
+import { encodeGeometryInit, OCR_IMAGE_KEY, type GeometryInit, type GeometryMessage } from '../shared/protocol';
+import { shrinkPicture } from './picture';
+import { readSelectedPicture } from './word';
 import { rasterizeSvg } from './rasterize';
 import { flatOpcText } from '../geometry/exerciseText';
 
@@ -131,17 +133,48 @@ function showGeometryDialog(init: GeometryInit): Promise<GeometryMessage> {
   });
 }
 
-/** Opens the geometry editor on the selected figure, or for a new one; inserts the result. */
+/**
+ * Opens the geometry editor on the selected figure, or for a new one; inserts the result.
+ * A plain picture selected in the document (a scanned or pasted figure) is read into a figure.
+ */
 export async function runGeometryEditor(): Promise<void> {
   const found = await readSelectedFigure();
   const existing = found === 'none' ? null : found;
-  const exercise = found === 'none' ? await readSelectedExercise() : '';
-  let init: GeometryInit = existing
+  const picture = found === 'none' ? await readSelectedPicture() : null;
+  const exercise = found === 'none' && !picture ? await readSelectedExercise() : '';
+  if (picture) {
+    try {
+      localStorage.setItem(OCR_IMAGE_KEY, await shrinkPicture(picture));
+    } catch (e) {
+      console.warn('MathStudio: could not hand the picture to the editor', e);
+    }
+  }
+  const init: GeometryInit = existing
     ? { construction: existing, mode: 'edit' }
     : found === null
       ? // a MathStudio figure whose data was lost (e.g. the picture was replaced): say so, keep editing possible
         { mode: 'edit', error: 'Không đọc được dữ liệu của hình này (có thể ảnh đã bị thay hoặc chỉnh trong Word). Bạn có thể vẽ lại; bấm Cập nhật sẽ thay hình cũ.' }
-      : { mode: 'insert', ...(exercise ? { exercise } : {}) };
+      : { mode: 'insert', ...(exercise ? { exercise } : {}), ...(picture ? { ocr: true } : {}) };
+  try {
+    await geometryLoop(init);
+  } finally {
+    if (picture) {
+      try {
+        localStorage.removeItem(OCR_IMAGE_KEY);
+      } catch {
+        /* storage unavailable */
+      }
+    }
+  }
+}
+
+/** Opens the geometry editor on a figure read from a picture (a new figure to insert). */
+export async function runGeometryEditorWith(construction: Construction): Promise<void> {
+  await geometryLoop({ construction, mode: 'insert' });
+}
+
+/** Runs the editor until the figure is inserted or the user cancels. */
+async function geometryLoop(init: GeometryInit): Promise<void> {
   for (;;) {
     const msg = await showGeometryDialog(init);
     if (msg.type !== 'insertGeometry') return;

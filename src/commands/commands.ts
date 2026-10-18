@@ -1,5 +1,5 @@
 /** Ribbon button handlers (function commands). */
-import { runConvert, runEditor, runRenumber, runToggleTex } from '../office/editor-dialog';
+import { runConvert, runEditor, runFromPicture, runRenumber, runToggleTex } from '../office/editor-dialog';
 import { readSelectedEquation } from '../office/word';
 import { runGeometryEditor, selectionIsFigure } from '../office/geometry';
 
@@ -20,6 +20,7 @@ const handlers: Record<string, (event: Office.AddinCommands.Event) => Promise<vo
   insertDisplayEquation: command(() => runEditor('display')),
   insertRightNumberedEquation: command(() => runEditor('right')),
   insertLeftNumberedEquation: command(() => runEditor('left')),
+  insertFromPicture: command(runFromPicture),
   // "Edit" works on whatever is selected: a figure opens the geometry editor.
   // Editing is one gesture for both kinds (double-click, Ctrl+Alt+E, either Edit button):
   // the object at the cursor decides which editor opens.

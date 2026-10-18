@@ -1,5 +1,6 @@
 /** Messages exchanged between the ribbon/taskpane runtime and the editor dialog. */
 import type { Layout, RenderKind } from '../core/ooxml';
+import type { PageParagraphSource } from '../core/page-ooxml';
 import type { Construction } from '../geometry/model';
 
 export interface EditorInit {
@@ -10,7 +11,12 @@ export interface EditorInit {
   mode: 'insert' | 'edit';
   /** Shown when reopening the editor after a failed insertion. */
   error?: string;
+  /** Open the "from a picture" panel at start (a picture selected in Word is in localStorage, see OCR_IMAGE_KEY). */
+  ocr?: boolean;
 }
+
+/** localStorage key through which the ribbon hands the selected picture to the editor dialog. */
+export const OCR_IMAGE_KEY = 'mathstudio.ocrImage';
 
 export interface InsertMessage {
   type: 'insert';
@@ -21,7 +27,21 @@ export interface InsertMessage {
   sizePt?: number;
 }
 
-export type DialogMessage = InsertMessage | { type: 'cancel' };
+/** An exercise read from a picture: paragraphs of text and formulas, inserted as they are. */
+export interface InsertPageMessage {
+  type: 'insertPage';
+  paragraphs: PageParagraphSource[];
+  fontId: string;
+  sizePt?: number;
+}
+
+/** A figure read from a picture in the equation editor: continue in the figure editor. */
+export interface OpenFigureMessage {
+  type: 'openFigure';
+  construction: Construction;
+}
+
+export type DialogMessage = InsertMessage | InsertPageMessage | OpenFigureMessage | { type: 'cancel' };
 
 export function encodeInit(init: EditorInit): string {
   const bytes = new TextEncoder().encode(JSON.stringify(init));
@@ -51,6 +71,8 @@ export interface GeometryInit {
   error?: string;
   /** Text of an exercise selected in the document: opens "type the exercise" with it. */
   exercise?: string;
+  /** Open "from a picture" at start (a picture selected in Word is in localStorage, see OCR_IMAGE_KEY). */
+  ocr?: boolean;
 }
 
 export type GeometryMessage = { type: 'insertGeometry'; construction: Construction } | { type: 'cancel' };

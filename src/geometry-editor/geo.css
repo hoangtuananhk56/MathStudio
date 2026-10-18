@@ -1125,3 +1125,14 @@
   align-items: center;
   gap: 4px;
 }
+
+.geo-ocr-btn {
+  align-self: flex-start;
+  height: 30px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  background: var(--tonal);
+  color: var(--on-tonal);
+  font-weight: 600;
+}

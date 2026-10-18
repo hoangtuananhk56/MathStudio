@@ -1,0 +1,86 @@
+[
+ {
+  "file": "p0-termes.png",
+  "text": "Bài 1. Cho tam giác ABC vuông tại A, có AB = 3 cm, AC = 4 cm. Kẻ đường cao AH. Gọi M là trung điểm của BC. Chứng minh rằng $AH \\cdot BC = AB \\cdot AC$."
+ },
+ {
+  "file": "p0-stix2.png",
+  "text": "Bài 1. Cho tam giác ABC vuông tại A, có AB = 3 cm, AC = 4 cm. Kẻ đường cao AH. Gọi M là trung điểm của BC. Chứng minh rằng $AH \\cdot BC = AB \\cdot AC$."
+ },
+ {
+  "file": "p1-termes.png",
+  "text": "Câu 2. Giải phương trình $x^2-5x+6=0$ và tính giá trị biểu thức $A=\\frac{x_1+x_2}{x_1x_2}$."
+ },
+ {
+  "file": "p1-stix2.png",
+  "text": "Câu 2. Giải phương trình $x^2-5x+6=0$ và tính giá trị biểu thức $A=\\frac{x_1+x_2}{x_1x_2}$."
+ },
+ {
+  "file": "p2-termes.png",
+  "text": "Bài 3. Cho đường tròn (O; R) và điểm M nằm ngoài đường tròn. Từ M kẻ hai tiếp tuyến MA, MB với đường tròn (A, B là các tiếp điểm). Chứng minh tứ giác MAOB nội tiếp."
+ },
+ {
+  "file": "p2-stix2.png",
+  "text": "Bài 3. Cho đường tròn (O; R) và điểm M nằm ngoài đường tròn. Từ M kẻ hai tiếp tuyến MA, MB với đường tròn (A, B là các tiếp điểm). Chứng minh tứ giác MAOB nội tiếp."
+ },
+ {
+  "file": "p3-termes.png",
+  "text": "Bài 4. Tính tích phân $I=\\int_0^1 x^2\\,dx$. Cho hàm số $f(x)=\\dfrac{2x-1}{x+3}$. Tìm tập xác định của hàm số."
+ },
+ {
+  "file": "p3-stix2.png",
+  "text": "Bài 4. Tính tích phân $I=\\int_0^1 x^2\\,dx$. Cho hàm số $f(x)=\\dfrac{2x-1}{x+3}$. Tìm tập xác định của hàm số."
+ },
+ {
+  "file": "p4-termes.png",
+  "text": "Ví dụ 5. Cho hình vuông ABCD cạnh a. Trên cạnh AB lấy điểm E sao cho $AE=\\frac{a}{3}$. Đường thẳng DE cắt BC tại F. Tính độ dài đoạn thẳng DF theo a."
+ },
+ {
+  "file": "p4-stix2.png",
+  "text": "Ví dụ 5. Cho hình vuông ABCD cạnh a. Trên cạnh AB lấy điểm E sao cho $AE=\\frac{a}{3}$. Đường thẳng DE cắt BC tại F. Tính độ dài đoạn thẳng DF theo a."
+ },
+ {
+  "file": "p5-termes.png",
+  "text": "Bài 6. Rút gọn biểu thức $P=\\sqrt{x}+\\frac{1}{\\sqrt{x}-1}$ với $x>0$, $x\\neq 1$. Hãy tìm giá trị nhỏ nhất của biểu thức đã cho."
+ },
+ {
+  "file": "p5-stix2.png",
+  "text": "Bài 6. Rút gọn biểu thức $P=\\sqrt{x}+\\frac{1}{\\sqrt{x}-1}$ với $x>0$, $x\\neq 1$. Hãy tìm giá trị nhỏ nhất của biểu thức đã cho."
+ },
+ {
+  "file": "p7-termes.png",
+  "text": "Bài 7. Cho hàm số $y=x^3-3x^2+2$ có đồ thị (C). Viết phương trình tiếp tuyến của đồ thị (C) tại điểm có hoành độ bằng 1. Tìm m để đường thẳng $y=mx+2$ cắt (C) tại ba điểm phân biệt."
+ },
+ {
+  "file": "p7-stix2.png",
+  "text": "Bài 7. Cho hàm số $y=x^3-3x^2+2$ có đồ thị (C). Viết phương trình tiếp tuyến của đồ thị (C) tại điểm có hoành độ bằng 1. Tìm m để đường thẳng $y=mx+2$ cắt (C) tại ba điểm phân biệt."
+ },
+ {
+  "file": "p7-photo.jpg",
+  "text": "Bài 7. Cho hàm số $y=x^3-3x^2+2$ có đồ thị (C). Viết phương trình tiếp tuyến của đồ thị (C) tại điểm có hoành độ bằng 1. Tìm m để đường thẳng $y=mx+2$ cắt (C) tại ba điểm phân biệt."
+ },
+ {
+  "file": "p8-termes.png",
+  "text": "Bài 8. Giải hệ phương trình sau:\n$$\\begin{cases}2x+y=5\\\\x-y=1\\end{cases}$$\nTừ đó tính giá trị của biểu thức $T=x^2+y^2$."
+ },
+ {
+  "file": "p8-stix2.png",
+  "text": "Bài 8. Giải hệ phương trình sau:\n$$\\begin{cases}2x+y=5\\\\x-y=1\\end{cases}$$\nTừ đó tính giá trị của biểu thức $T=x^2+y^2$."
+ },
+ {
+  "file": "p8-photo.jpg",
+  "text": "Bài 8. Giải hệ phương trình sau:\n$$\\begin{cases}2x+y=5\\\\x-y=1\\end{cases}$$\nTừ đó tính giá trị của biểu thức $T=x^2+y^2$."
+ },
+ {
+  "file": "p9-termes.png",
+  "text": "Bài 9. Cho tam giác ABC có $\\widehat{BAC}=60^\\circ$, AB = 4 cm, AC = 6 cm. Tính độ dài cạnh BC và diện tích tam giác ABC. Biết rằng\n$$BC^2=AB^2+AC^2-2AB\\cdot AC\\cdot\\cos A$$"
+ },
+ {
+  "file": "p9-stix2.png",
+  "text": "Bài 9. Cho tam giác ABC có $\\widehat{BAC}=60^\\circ$, AB = 4 cm, AC = 6 cm. Tính độ dài cạnh BC và diện tích tam giác ABC. Biết rằng\n$$BC^2=AB^2+AC^2-2AB\\cdot AC\\cdot\\cos A$$"
+ },
+ {
+  "file": "p9-photo.jpg",
+  "text": "Bài 9. Cho tam giác ABC có $\\widehat{BAC}=60^\\circ$, AB = 4 cm, AC = 6 cm. Tính độ dài cạnh BC và diện tích tam giác ABC. Biết rằng\n$$BC^2=AB^2+AC^2-2AB\\cdot AC\\cdot\\cos A$$"
+ }
+]

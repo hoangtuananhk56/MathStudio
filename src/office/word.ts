@@ -15,6 +15,7 @@ import {
   type RenderKind,
 } from '../core/ooxml';
 import { ommlToLatex } from '../core/omml-to-latex';
+import { buildPagePackage, type PageParagraphSource } from '../core/page-ooxml';
 import { rasterizeSvg } from './rasterize';
 
 export interface SelectedEquation {
@@ -130,6 +131,38 @@ export async function insertEquation(latex: string, opts: EquationOptions): Prom
   });
 
   if (isNumberedLayout(opts.layout)) await renumberEquations(opts);
+}
+
+/** Inserts paragraphs of text and equations (an exercise read from a picture) at the selection. */
+export async function insertPage(paragraphs: PageParagraphSource[], style: Pick<EquationStyle, 'fontId' | 'sizePt'>): Promise<void> {
+  await Word.run(async (ctx) => {
+    const inserted = ctx.document.getSelection().insertOoxml(buildPagePackage(paragraphs, style), 'Replace');
+    inserted.getRange('End').select('Start');
+    await ctx.sync();
+  });
+}
+
+/**
+ * The selected picture (a photo or scan pasted in the document) as a data URL, or null.
+ * Never throws.
+ */
+export async function readSelectedPicture(): Promise<string | null> {
+  try {
+    return await Word.run(async (ctx) => {
+      const pics = ctx.document.getSelection().inlinePictures;
+      pics.load('items');
+      await ctx.sync();
+      if (!pics.items.length) return null;
+      const b64 = pics.items[0].getBase64ImageSrc();
+      await ctx.sync();
+      if (!b64.value) return null;
+      const type = b64.value.startsWith('/9j/') ? 'jpeg' : b64.value.startsWith('R0lG') ? 'gif' : b64.value.startsWith('Qk') ? 'bmp' : 'png';
+      return `data:image/${type};base64,${b64.value}`;
+    });
+  } catch (e) {
+    console.warn('MathStudio: could not read the selected picture', e);
+    return null;
+  }
 }
 
 /**

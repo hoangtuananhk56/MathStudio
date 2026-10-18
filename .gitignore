@@ -6,3 +6,5 @@ public/fonts/
 *.log
 .devlog/
 dist-tools/
+public/ocr/
+.models/

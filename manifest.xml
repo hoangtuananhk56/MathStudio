@@ -114,6 +114,21 @@
                     <FunctionName>insertLeftNumberedEquation</FunctionName>
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="MathStudio.FromPicture">
+                  <Label resid="FromPicture.Label" />
+                  <Supertip>
+                    <Title resid="FromPicture.Label" />
+                    <Description resid="FromPicture.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Ocr.16" />
+                    <bt:Image size="32" resid="Icon.Ocr.32" />
+                    <bt:Image size="80" resid="Icon.Ocr.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>insertFromPicture</FunctionName>
+                  </Action>
+                </Control>
               </Group>
               <Group id="MathStudio.EquationGroup">
                 <Label resid="Group.Equation" />
@@ -317,6 +332,9 @@
         <bt:Image id="Icon.GeoEdit.16" DefaultValue="https://localhost:3000/assets/geoEdit-16.png" />
         <bt:Image id="Icon.GeoEdit.32" DefaultValue="https://localhost:3000/assets/geoEdit-32.png" />
         <bt:Image id="Icon.GeoEdit.80" DefaultValue="https://localhost:3000/assets/geoEdit-80.png" />
+        <bt:Image id="Icon.Ocr.16" DefaultValue="https://localhost:3000/assets/ocr-16.png" />
+        <bt:Image id="Icon.Ocr.32" DefaultValue="https://localhost:3000/assets/ocr-32.png" />
+        <bt:Image id="Icon.Ocr.80" DefaultValue="https://localhost:3000/assets/ocr-80.png" />
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands/index.html" />
@@ -378,6 +396,9 @@
         <bt:String id="EditFigure.Label" DefaultValue="Edit Figure">
           <bt:Override Locale="vi-VN" Value="Sửa hình" />
         </bt:String>
+        <bt:String id="FromPicture.Label" DefaultValue="From Picture">
+          <bt:Override Locale="vi-VN" Value="Từ ảnh" />
+        </bt:String>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Open the MathStudio tab to write your first equation.">
@@ -418,6 +439,9 @@
         </bt:String>
         <bt:String id="EditFigure.Tip" DefaultValue="Put the cursor on a figure, then click to edit it (or double-click the figure).">
           <bt:Override Locale="vi-VN" Value="Đặt con trỏ vào hình rồi bấm để sửa (hoặc nhấp đúp vào hình)." />
+        </bt:String>
+        <bt:String id="FromPicture.Tip" DefaultValue="Read an equation or a whole exercise from a picture (photo, scan, screenshot) so you can edit it. Select a picture in the document first, or paste one in. Works offline.">
+          <bt:Override Locale="vi-VN" Value="Nhận diện công thức hoặc cả đề bài từ ảnh (ảnh chụp, ảnh quét, ảnh màn hình) để sửa và dùng lại. Chọn một ảnh trong tài liệu trước, hoặc dán ảnh vào. Chạy không cần mạng." />
         </bt:String>
       </bt:LongStrings>
     </Resources>

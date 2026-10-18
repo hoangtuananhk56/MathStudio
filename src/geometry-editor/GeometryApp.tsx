@@ -7,7 +7,9 @@ import { copyClosure, freeAncestors, moveObjects, objectsInRect, pasteObjects, p
 import {
   ALL_TOOLS, TOOL_GROUPS, TOOL_KEYS, createFromTool, deleteWithDependents, matches, nextId, nextPointName, toolById, type ToolDef, type ToolId,
 } from '../geometry/tools';
-import type { GeometryInit, GeometryMessage } from '../shared/protocol';
+import { OCR_IMAGE_KEY, type GeometryInit, type GeometryMessage } from '../shared/protocol';
+import { OcrPanel } from '../ocr/OcrPanel';
+import { pageToPlain } from '../ocr/page';
 import { loadSettings, saveSettings, type Lang } from '../shared/settings';
 import { ToolIcon } from './icons';
 import { GRADES, familyOf, isPrimary, stepCount, stepText, toolsForGrade, type Grade } from '../geometry/grades';
@@ -99,6 +101,10 @@ const TX = {
   compassTip: { vi: 'Khi dựng tam giác biết 3 cạnh, trung trực, tia phân giác: giữ lại các cung com-pa như dựng hình trên giấy.', en: 'Keep the compass arcs of constructions (triangle from 3 sides, bisectors) as on paper.' },
   ruler: { vi: 'Thước kẻ', en: 'Ruler' },
   library: { vi: 'Hình mẫu & đề bài', en: 'Templates & exercises' },
+  fromPicture: { vi: 'Từ ảnh', en: 'From picture' },
+  fromPictureTip: { vi: 'Dựng lại hình từ ảnh hình vẽ (ảnh chụp, ảnh quét, ảnh trong tài liệu), hoặc đọc đề bài trong ảnh rồi vẽ', en: 'Rebuild a figure from a picture of it, or read an exercise from a picture and draw it' },
+  useFigure: { vi: 'Đưa vào hình vẽ', en: 'Add to the drawing' },
+  drawExercise: { vi: 'Vẽ hình theo đề này', en: 'Draw this exercise' },
   todo: { vi: 'Việc còn lại', en: 'To do' },
   todoTip: { vi: 'Những phần của đề chưa vẽ tự động được. Bấm vào tên công cụ để vẽ, đánh dấu khi xong.', en: 'Parts of the exercise not drawn automatically. Click the tool to draw them, tick when done.' },
   turnLeft: { vi: 'Xoay trái', en: 'Turn left' },
@@ -264,6 +270,34 @@ export function GeometryApp({ init, send }: Props) {
   /** Ruler, set square, protractor on the canvas (editor only, never inserted). */
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [libraryOpen, setLibraryOpen] = useState(!!init.exercise);
+  /** Exercise text for the library's "type the exercise" tab (typed, selected or read from a picture). */
+  const [libraryText, setLibraryText] = useState(init.exercise);
+  // "From a picture": with the picture selected in Word, or one pasted here
+  const [ocr, setOcr] = useState<{ image: string | null } | null>(() => {
+    if (!init.ocr) return null;
+    let image: string | null = null;
+    try {
+      image = localStorage.getItem(OCR_IMAGE_KEY);
+      localStorage.removeItem(OCR_IMAGE_KEY);
+    } catch {
+      /* storage unavailable: the user pastes the picture */
+    }
+    return { image };
+  });
+  const dialogOpen = useRef(false);
+  dialogOpen.current = !!ocr || libraryOpen;
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (dialogOpen.current) return;
+      const file = [...(e.clipboardData?.items ?? [])].find((i) => i.kind === 'file' && i.type.startsWith('image/'))?.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOcr({ image: URL.createObjectURL(file) });
+    };
+    window.addEventListener('paste', onPaste, true);
+    return () => window.removeEventListener('paste', onPaste, true);
+  }, []);
   /** Space held: dragging pans the view (as in drawing programs). */
   const spaceDown = useRef(false);
   useEffect(() => {
@@ -1183,6 +1217,7 @@ export function GeometryApp({ init, send }: Props) {
         </div>
         <div className="geo-top-actions">
           <button className="btn btn-tonal geo-lib-btn" onClick={() => setLibraryOpen(true)}>{t('library')}</button>
+          <button className="btn btn-tonal geo-lib-btn" onClick={() => setOcr({ image: null })} title={t('fromPictureTip')}>{t('fromPicture')}</button>
           <label className="geo-check geo-select geo-grade">
             {t('grade')}
             <select
@@ -1493,10 +1528,29 @@ export function GeometryApp({ init, send }: Props) {
         <LibraryDialog
           lang={lang}
           grade={grade}
-          initialTab={init.exercise ? 'text' : 'tpl'}
-          initialText={init.exercise}
+          initialTab={libraryText ? 'text' : 'tpl'}
+          initialText={libraryText}
           onClose={() => setLibraryOpen(false)}
           onInsert={insertFigure}
+        />
+      )}
+      {ocr && (
+        <OcrPanel
+          lang={lang}
+          modes={['figure', 'page']}
+          initialImage={ocr.image}
+          figureAction={t('useFigure')}
+          pageAction={t('drawExercise')}
+          onClose={() => setOcr(null)}
+          onFigure={(fig) => {
+            setOcr(null);
+            insertFigure(fig);
+          }}
+          onPage={(paragraphs) => {
+            setOcr(null);
+            setLibraryText(pageToPlain(paragraphs));
+            setLibraryOpen(true);
+          }}
         />
       )}
       {ask && (

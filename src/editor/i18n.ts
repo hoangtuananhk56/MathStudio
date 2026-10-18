@@ -74,6 +74,12 @@ const STRINGS = {
   preview: { vi: 'Xem OMML (chế độ thử)', en: 'OMML preview (dev mode)' },
   basic: { vi: 'Cơ bản', en: 'Basic' },
   advanced: { vi: 'Nâng cao', en: 'Advanced' },
+  fromPicture: { vi: 'Từ ảnh', en: 'From picture' },
+  fromPictureMenu: { vi: 'Nhận diện từ ảnh…', en: 'Read from a picture…' },
+  ocrDone: { vi: 'Đã nhận diện xong, bạn có thể sửa trực tiếp', en: 'Recognised; you can edit it right here' },
+  ocrCheck: { vi: 'Hãy kiểm tra kỹ công thức vừa nhận diện', en: 'Please check the recognised formula carefully' },
+  ocrInsertPage: { vi: 'Chèn vào tài liệu', en: 'Insert into the document' },
+  ocrOpenFigure: { vi: 'Mở trong trình vẽ hình', en: 'Open in the figure editor' },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type StringKey = keyof typeof STRINGS;

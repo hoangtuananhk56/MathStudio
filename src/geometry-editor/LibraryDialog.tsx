@@ -6,6 +6,8 @@ import type { Grade } from '../geometry/grades';
 import type { Construction } from '../geometry/model';
 import { renderConstruction } from '../geometry/render';
 import { TEMPLATES } from '../geometry/templates';
+import { OcrPanel } from '../ocr/OcrPanel';
+import { pageToPlain } from '../ocr/page';
 import type { Lang } from '../shared/settings';
 
 /** The figure as a picture that scales to its box. */
@@ -71,6 +73,8 @@ export function LibraryDialog(props: {
   const [remember, setRemember] = useState(true);
   const [result, setResult] = useState<TextFigure | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** "Exercise from a picture" (with the picture pasted into the text box, if any). */
+  const [ocr, setOcr] = useState<{ image: string | null } | null>(null);
 
   // the figure follows the text as it is typed
   useEffect(() => {
@@ -109,6 +113,20 @@ export function LibraryDialog(props: {
   return (
     <div className="modal-backdrop" onMouseDown={props.onClose}>
       <div className="modal geo-lib" onMouseDown={(e) => e.stopPropagation()}>
+        {ocr && (
+          <OcrPanel
+            lang={props.lang}
+            modes={['page']}
+            initialImage={ocr.image}
+            pageAction={vi ? 'Dùng đề này' : 'Use this exercise'}
+            onClose={() => setOcr(null)}
+            onPage={(paragraphs) => {
+              setOcr(null);
+              setTab('text');
+              setText(pageToPlain(paragraphs));
+            }}
+          />
+        )}
         <div className="modal-head geo-lib-head">
           <div className="segmented">
             <button className={tab === 'tpl' ? 'seg-on' : ''} onClick={() => setTab('tpl')}>{vi ? 'Hình mẫu theo lớp' : 'Templates by year'}</button>
@@ -145,7 +163,16 @@ export function LibraryDialog(props: {
                   autoFocus
                   placeholder={vi ? 'Gõ hoặc dán đề bài, ví dụ: Cho tam giác ABC vuông tại A có AB = 3 cm, AC = 4 cm. Kẻ đường cao AH.' : 'Type or paste the exercise…'}
                   onChange={(e) => setText(e.target.value)}
+                  onPaste={(e) => {
+                    const file = [...e.clipboardData.items].find((i) => i.kind === 'file' && i.type.startsWith('image/'))?.getAsFile();
+                    if (!file) return;
+                    e.preventDefault();
+                    setOcr({ image: URL.createObjectURL(file) });
+                  }}
                 />
+                <button className="geo-chip geo-ocr-btn" onClick={() => setOcr({ image: null })}>
+                  {vi ? 'Lấy đề từ ảnh (ảnh chụp, ảnh quét)…' : 'Exercise from a picture (photo, scan)…'}
+                </button>
                 {!text.trim() && (
                   <div className="geo-lib-examples">
                     <span className="geo-muted">{vi ? 'Thử một đề mẫu:' : 'Try an example:'}</span>

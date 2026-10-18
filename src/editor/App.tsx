@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildEquationPackage, fontById, MATH_FONTS } from '../core/equation';
 import type { Layout, RenderKind } from '../core/ooxml';
 import { renderSvg } from '../core/render-svg';
-import type { DialogMessage, EditorInit } from '../shared/protocol';
+import { buildPagePackage } from '../core/page-ooxml';
+import { LOW_CONFIDENCE, OcrPanel } from '../ocr/OcrPanel';
+import { OCR_IMAGE_KEY, type DialogMessage, type EditorInit } from '../shared/protocol';
 import { loadSettings, saveSettings, type Settings } from '../shared/settings';
 import { MenuBar, Modal, PaletteButton, Segmented, Tile, type MenuDef } from './components';
 import { isFontInstalled } from './font-check';
@@ -52,6 +54,18 @@ export function App({ init, send }: Props) {
   const [hint, setHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(init.error ? `${t(settings.lang, 'insertFailed')}: ${init.error}` : null);
   const [devOutput, setDevOutput] = useState<string | null>(null);
+  // "From a picture": open with the picture selected in Word, or when one is pasted
+  const [ocr, setOcr] = useState<{ image: string | null } | null>(() => {
+    if (!init.ocr) return null;
+    let image: string | null = null;
+    try {
+      image = localStorage.getItem(OCR_IMAGE_KEY);
+      localStorage.removeItem(OCR_IMAGE_KEY);
+    } catch {
+      /* storage unavailable: the user pastes the picture */
+    }
+    return { image };
+  });
   const editor = useRef<MathEditorHandle>(null);
   const greekNext = useRef(false);
   const lang = settings.lang;
@@ -128,6 +142,22 @@ export function App({ init, send }: Props) {
 
   const cancel = () => send?.({ type: 'cancel' });
 
+  // A picture pasted into the editor is read as a formula (MathLive would ignore it).
+  const ocrOpen = useRef(false);
+  ocrOpen.current = !!ocr;
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (ocrOpen.current) return;
+      const file = [...(e.clipboardData?.items ?? [])].find((i) => i.kind === 'file' && i.type.startsWith('image/'))?.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOcr({ image: URL.createObjectURL(file) });
+    };
+    window.addEventListener('paste', onPaste, true);
+    return () => window.removeEventListener('paste', onPaste, true);
+  }, []);
+
   // MathType keyboard shortcuts (+ the one-shot Greek style).
   const actions = useRef({ insert, applyStyle, submit, cancel, setHint, lang });
   actions.current = { insert, applyStyle, submit, cancel, setHint, lang };
@@ -169,6 +199,8 @@ export function App({ init, send }: Props) {
       entries: [
         { label: t(lang, init.mode === 'edit' ? 'updateClose' : 'insertClose'), shortcut: 'Ctrl+S', onClick: submit },
         { label: t(lang, 'closeNoSave'), shortcut: 'Ctrl+F4', onClick: cancel, disabled: !send },
+        'separator',
+        { label: t(lang, 'fromPictureMenu'), onClick: () => setOcr({ image: null }) },
         'separator',
         { label: t(lang, 'copyLatex'), onClick: () => { copyText(editor.current?.getLatex() ?? ''); setHint(t(lang, 'copied')); } },
         { label: t(lang, 'copyMathml'), onClick: () => { copyText(editor.current?.getMathml() ?? ''); setHint(t(lang, 'copied')); } },
@@ -460,6 +492,9 @@ export function App({ init, send }: Props) {
         </div>
         <div className="status-right">
           {hint && <span className="hint">{hint}</span>}
+          <button className="btn btn-tonal" onMouseDown={(e) => e.preventDefault()} onClick={() => setOcr({ image: null })} title={t(lang, 'fromPictureMenu')}>
+            {t(lang, 'fromPicture')}
+          </button>
           <button className="btn btn-tonal" onMouseDown={(e) => e.preventDefault()} onClick={cancel}>
             {t(lang, 'cancel')}
           </button>
@@ -468,6 +503,49 @@ export function App({ init, send }: Props) {
           </button>
         </div>
       </footer>
+
+      {ocr && (
+        <OcrPanel
+          lang={lang}
+          modes={['formula', 'page', 'figure']}
+          initialImage={ocr.image}
+          pageAction={t(lang, 'ocrInsertPage')}
+          figureAction={t(lang, 'ocrOpenFigure')}
+          onFigure={(construction) => {
+            if (send) {
+              send({ type: 'openFigure', construction });
+              return;
+            }
+            setOcr(null);
+            setDevOutput(JSON.stringify(construction, null, 1));
+            setDevSvg(null);
+          }}
+          onClose={() => {
+            setOcr(null);
+            editor.current?.focus();
+          }}
+          onFormula={(r) => {
+            setOcr(null);
+            const ed = editor.current;
+            if (!ed) return;
+            if (ed.getLatex().trim()) ed.insert(r.latex);
+            else ed.setLatex(r.latex);
+            setLatex(ed.getLatex());
+            setHint(t(lang, r.confidence < LOW_CONFIDENCE ? 'ocrCheck' : 'ocrDone'));
+            ed.focus();
+          }}
+          onPage={(paragraphs) => {
+            const style = { fontId: settings.fontId, sizePt: settings.sizePt || undefined };
+            if (send) {
+              send({ type: 'insertPage', paragraphs, ...style });
+              return;
+            }
+            setOcr(null);
+            setDevOutput(buildPagePackage(paragraphs, style));
+            setDevSvg(null);
+          }}
+        />
+      )}
 
       {showShortcuts && (
         <Modal title={t(lang, 'shortcuts')} closeLabel={t(lang, 'close')} onClose={() => setShowShortcuts(false)}>

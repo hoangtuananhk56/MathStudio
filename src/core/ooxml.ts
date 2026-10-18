@@ -137,6 +137,11 @@ export function buildPackage(paragraphContent: string, layout: Layout): string {
   // Set alignment explicitly so the paragraph does not inherit it from where it is inserted.
   const jc = layout === 'display' || layout === 'right' ? 'center' : layout === 'left' ? 'left' : null;
   const pPr = jc ? `<w:pPr><w:jc w:val="${jc}"/></w:pPr>` : '';
+  return buildBodyPackage(`<w:p>${pPr}${paragraphContent}</w:p>`);
+}
+
+/** A complete Flat-OPC package around body content (one or more <w:p>). */
+export function buildBodyPackage(body: string): string {
   return (
     '<?xml version="1.0" standalone="yes"?>' +
     '<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">' +
@@ -148,7 +153,7 @@ export function buildPackage(paragraphContent: string, layout: Layout): string {
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
     'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
     'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml">' +
-    `<w:body><w:p>${pPr}${paragraphContent}</w:p></w:body></w:document>` +
+    `<w:body>${body}</w:body></w:document>` +
     '</pkg:xmlData></pkg:part></pkg:package>'
   );
 }

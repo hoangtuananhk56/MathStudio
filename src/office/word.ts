@@ -81,7 +81,37 @@ async function readSelection(ctx: Word.RequestContext): Promise<SelectedEquation
     const layout: Layout = ooxml.value.includes('<m:oMathPara') ? 'display' : 'inline';
     return { latex: ommlToLatex(omath), layout, kind: 'omml', source: 'native' };
   }
+  // the picture of a MathStudio equation moved out of its content control (dragged
+  // elsewhere): its LaTeX is its alternative text
+  const latex = loosePictureLatex(ooxml.value);
+  if (latex) return { latex, layout: 'inline', kind: 'image', source: 'ours' };
   return NO_EQUATION;
+}
+
+/** LaTeX of a lone MathStudio equation picture ("MathStudio Equation n", alt text = LaTeX), or null. */
+export function loosePictureLatex(ooxml: string): string | null {
+  const m = /<wp:docPr [^>]*name="MathStudio Equation[^"]*"[^>]*descr="([^"]*)"|<wp:docPr [^>]*descr="([^"]*)"[^>]*name="MathStudio Equation/.exec(ooxml);
+  const alt = m?.[1] ?? m?.[2];
+  if (!alt) return null;
+  return alt.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+}
+
+/** Deletes MathStudio equation content controls left empty (their picture was moved out). */
+async function removeEmptyEquationControls(ctx: Word.RequestContext): Promise<void> {
+  const all = ctx.document.contentControls;
+  all.load('items/tag,items/text');
+  await ctx.sync();
+  const eqs = all.items.filter((cc) => isEquationTag(cc.tag) && !cc.text.trim());
+  const pics = eqs.map((cc) => {
+    const p = cc.inlinePictures;
+    p.load('items');
+    return p;
+  });
+  await ctx.sync();
+  eqs.forEach((cc, i) => {
+    if (!pics[i].items.length) cc.delete(false);
+  });
+  await ctx.sync();
 }
 
 /**
@@ -97,6 +127,18 @@ export async function insertEquation(latex: string, opts: EquationOptions): Prom
     await ctx.sync();
 
     const editing = !cc.isNullObject && isEquationTag(cc.tag);
+    // a MathStudio equation picture moved out of its control is replaced where it now is
+    let loose = false;
+    if (!editing) {
+      const pics = sel.inlinePictures;
+      pics.load('items');
+      await ctx.sync();
+      if (pics.items.length) {
+        const ox = pics.items[0].getRange('Whole').getOoxml();
+        await ctx.sync();
+        loose = loosePictureLatex(ox.value) !== null;
+      }
+    }
     let target: Word.Range = editing ? cc.getRange('Whole') : sel;
 
     if (isDisplayLayout(opts.layout)) {
@@ -128,6 +170,7 @@ export async function insertEquation(latex: string, opts: EquationOptions): Prom
       newCc.getRange('After').select('Start');
     }
     await ctx.sync();
+    if (loose) await removeEmptyEquationControls(ctx);
   });
 
   if (isNumberedLayout(opts.layout)) await renumberEquations(opts);

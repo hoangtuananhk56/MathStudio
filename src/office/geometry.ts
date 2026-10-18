@@ -32,18 +32,47 @@ async function buildFigurePackage(c: Construction, captionNumber?: number): Prom
   return buildPicturePackage(wrapInContentControl(run, GEOMETRY_TAG), captionNumber ? 'display' : 'inline', { svg: fig.svg, pngBase64: png }, after);
 }
 
+/** Word names the pictures of MathStudio figures "MathStudio Figure n" (see figureRun). */
+const FIGURE_PICTURE = /<wp:docPr [^>]*name="MathStudio Figure/;
+
+interface FigureAt {
+  /** What to replace when the figure is updated. */
+  range: Word.Range;
+  ooxml: string;
+  /**
+   * The picture was moved out of its content control (dragged elsewhere in Word): it is
+   * still a MathStudio figure, recognised by its name; updating wraps it again.
+   */
+  loose: boolean;
+}
+
+/** The MathStudio figure at the cursor (in its content control, or its picture alone), or null. */
+async function figureAt(ctx: Word.RequestContext): Promise<FigureAt | null> {
+  const sel = ctx.document.getSelection();
+  const cc = sel.parentContentControlOrNullObject;
+  cc.load('tag');
+  const pics = sel.inlinePictures;
+  pics.load('items');
+  await ctx.sync();
+  if (!cc.isNullObject && isGeometryTag(cc.tag)) {
+    const ooxml = cc.getOoxml();
+    await ctx.sync();
+    return { range: cc.getRange('Whole'), ooxml: ooxml.value, loose: false };
+  }
+  if (!pics.items.length) return null;
+  const range = pics.items[0].getRange('Whole');
+  const ooxml = range.getOoxml();
+  await ctx.sync();
+  return FIGURE_PICTURE.test(ooxml.value) ? { range, ooxml: ooxml.value, loose: true } : null;
+}
+
 /** The figure at the cursor: 'none', or its construction (null when it cannot be read). */
 async function readSelectedFigure(): Promise<Construction | null | 'none'> {
   try {
     return await Word.run(async (ctx) => {
-      const cc = ctx.document.getSelection().parentContentControlOrNullObject;
-      cc.load('tag');
-      await ctx.sync();
-      if (cc.isNullObject || !isGeometryTag(cc.tag)) return 'none';
-      const ooxml = cc.getOoxml();
-      await ctx.sync();
+      const f = await figureAt(ctx);
       // the construction travels inside the SVG picture (base64 or, once saved by Word, XML)
-      return decodeConstructionFromOoxml(ooxml.value);
+      return f ? decodeConstructionFromOoxml(f.ooxml) : 'none';
     });
   } catch (e) {
     console.warn('MathStudio: could not read the figure', e);
@@ -73,15 +102,10 @@ async function readSelectedExercise(): Promise<string> {
   }
 }
 
-/** True when the cursor is inside a MathStudio figure. */
+/** True when the cursor is inside a MathStudio figure, or its picture (even moved out of its control) is selected. */
 export async function selectionIsFigure(): Promise<boolean> {
   try {
-    return await Word.run(async (ctx) => {
-      const cc = ctx.document.getSelection().parentContentControlOrNullObject;
-      cc.load('tag');
-      await ctx.sync();
-      return !cc.isNullObject && isGeometryTag(cc.tag);
-    });
+    return await Word.run(async (ctx) => !!(await figureAt(ctx)));
   } catch {
     return false;
   }
@@ -91,24 +115,43 @@ export async function selectionIsFigure(): Promise<boolean> {
 export async function insertFigure(c: Construction): Promise<void> {
   await Word.run(async (ctx) => {
     const sel = ctx.document.getSelection();
-    const cc = sel.parentContentControlOrNullObject;
-    cc.load('tag');
+    const current = await figureAt(ctx);
     const all = ctx.document.contentControls;
     all.load('items/tag');
     await ctx.sync();
-    const replacing = !cc.isNullObject && isGeometryTag(cc.tag);
+    const replacing = !!current;
     // a new figure with a caption: number it after the figures already in the document
     const n = c.caption && !replacing ? all.items.filter((x) => isGeometryTag(x.tag)).length + 1 : undefined;
     const pkg = await buildFigurePackage(c, n);
     sel.load('isEmpty');
     await ctx.sync();
     // a selected exercise stays: the figure goes in a new paragraph after it
-    const target = replacing ? cc.getRange('Whole') : sel.isEmpty ? sel : sel.paragraphs.getLast().insertParagraph('', 'After').getRange('Start');
+    const target = current ? current.range : sel.isEmpty ? sel : sel.paragraphs.getLast().insertParagraph('', 'After').getRange('Start');
     const inserted = target.insertOoxml(pkg, 'Replace');
     await ctx.sync();
     inserted.getRange('After').select('Start');
     await ctx.sync();
+    // the content control a moved picture left behind is empty now: remove it
+    if (current?.loose) await removeEmptyFigureControls(ctx);
   });
+}
+
+/** Deletes MathStudio figure content controls that no longer hold a picture. */
+async function removeEmptyFigureControls(ctx: Word.RequestContext): Promise<void> {
+  const all = ctx.document.contentControls;
+  all.load('items/tag');
+  await ctx.sync();
+  const figures = all.items.filter((cc) => isGeometryTag(cc.tag));
+  const pics = figures.map((cc) => {
+    const p = cc.inlinePictures;
+    p.load('items');
+    return p;
+  });
+  await ctx.sync();
+  figures.forEach((cc, i) => {
+    if (!pics[i].items.length) cc.delete(false);
+  });
+  await ctx.sync();
 }
 
 function showGeometryDialog(init: GeometryInit): Promise<GeometryMessage> {

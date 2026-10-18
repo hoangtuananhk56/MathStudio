@@ -203,7 +203,13 @@ namespace MathStudio
                 }
                 string tag = cc == null ? null : Get(cc, "Tag") as string;
                 // "mt2|…" = equation, "mt2g|…" = geometry figure; the Edit button handles both.
-                return tag != null && tag.StartsWith("mt2", StringComparison.Ordinal);
+                if (tag != null && tag.StartsWith("mt2", StringComparison.Ordinal)) return true;
+                // A MathStudio picture dragged elsewhere leaves its content control behind:
+                // it is still recognised by its name ("MathStudio Figure n" / "MathStudio Equation n").
+                object shapes = Get(range, "InlineShapes");
+                if (shapes == null || Convert.ToInt32(Get(shapes, "Count")) == 0) return false;
+                string xml = Get(range, "WordOpenXML") as string;
+                return xml != null && (xml.Contains("name=\"MathStudio Figure") || xml.Contains("name=\"MathStudio Equation"));
             }
             catch { return false; }
             finally

@@ -63,4 +63,5 @@ jobs:
             - **Windows** (Word 2016 trở lên / Microsoft 365): tải `MathStudio-Setup-Windows.exe`, đóng Word, nhấp đúp để cài.
             - **macOS** (Word 2016 cho Mac trở lên): tải `MathStudio-macOS.pkg`, đóng Word, nhấp chuột phải → Mở để cài.
 
-            Hướng dẫn chi tiết (kể cả cảnh báo của Windows / macOS khi mở file): [docs/CAI-DAT.md](https://github.com/${{ github.repository }}/blob/main/docs/CAI-DAT.md)
+            Hướng dẫn cài đặt (kể cả cảnh báo của Windows / macOS khi mở file): [docs/CAI-DAT.md](https://github.com/${{ github.repository }}/blob/main/docs/CAI-DAT.md)
+            Hướng dẫn sử dụng: [docs/HUONG-DAN-SU-DUNG.md](https://github.com/${{ github.repository }}/blob/main/docs/HUONG-DAN-SU-DUNG.md)

@@ -8,7 +8,7 @@ Add-in Office (Office.js) chạy trên **Word cho Windows, macOS và Word Online
 
 ## Tải về và cài đặt
 
-Tải bộ cài ở trang **[Releases](https://github.com/hoangtuananhk56/MathStudio/releases/latest)**: `MathStudio-Setup-Windows.exe` (Windows) hoặc `MathStudio-macOS.pkg` (macOS), đóng Word rồi mở file để cài. Hướng dẫn chi tiết: **[docs/CAI-DAT.md](docs/CAI-DAT.md)**.
+Tải bộ cài ở trang **[Releases](https://github.com/hoangtuananhk56/MathStudio/releases/latest)**: `MathStudio-Setup-Windows.exe` (Windows) hoặc `MathStudio-macOS.pkg` (macOS), đóng Word rồi mở file để cài. Hướng dẫn: **[Cài đặt](docs/CAI-DAT.md)** · **[Sử dụng](docs/HUONG-DAN-SU-DUNG.md)**.
 
 Bộ cài chỉ đăng ký add-in với Word (cùng phông chữ toán học và, trên Windows, công cụ nhấp đúp để sửa); MathStudio được tải từ GitHub Pages mỗi khi mở Word nên luôn là bản mới nhất.
 

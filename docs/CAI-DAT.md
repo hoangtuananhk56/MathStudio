@@ -2,6 +2,8 @@
 
 MathStudio thêm tab **MathStudio** vào Microsoft Word: soạn công thức Toán đẹp như sách giáo khoa, vẽ hình học, nhận diện công thức / đề bài / hình vẽ từ ảnh. Miễn phí.
 
+Cài xong, xem **[Hướng dẫn sử dụng](HUONG-DAN-SU-DUNG.md)**.
+
 ## Cần có
 
 - **Windows**: Word 2016, 2019, 2021, 2024 hoặc Microsoft 365.
@@ -45,9 +47,20 @@ Trên Mac, sửa công thức / hình bằng cách đặt con trỏ vào đó r�
 
 **Gỡ cài đặt**: mở Finder → **Đi → Đi tới thư mục…** → gõ `/Library/Application Support/MathStudio` → nhấp đúp **Uninstall MathStudio.command**.
 
+## Dùng trên Word trên web (word.office.com)
+
+Không cần cài gì, chỉ cần nạp MathStudio một lần:
+
+1. Tải file cấu hình: mở `https://hoangtuananhk56.github.io/MathStudio/manifest.xml`, bấm chuột phải → **Lưu thành…** (Save as), lưu thành `manifest.xml`.
+2. Mở một tài liệu trong Word trên web → tab **Trang đầu** (Home) → **Bổ trợ** (Add-ins) → **Bổ trợ khác** (More Add-ins).
+3. Chọn **Bổ trợ của tôi** (My Add-ins) → **Tải lên bổ trợ của tôi** (Upload My Add-in) → chọn file `manifest.xml` vừa lưu → **Tải lên**.
+4. Tab MathStudio xuất hiện. Từ lần sau, mở lại ở **Bổ trợ → Bổ trợ của tôi**.
+
+Trên Word web không có nhấp đúp để sửa: đặt con trỏ vào công thức / hình rồi bấm **Sửa công thức** / **Sửa hình**.
+
 ## Cập nhật
 
-MathStudio tự cập nhật: mỗi lần mở Word là bản mới nhất. Chỉ cần cài lại khi trang Releases ghi rõ là cần (khi có nút mới trên thanh công cụ).
+MathStudio tự cập nhật: mỗi lần mở Word là bản mới nhất. Chỉ cần tải bộ cài mới và cài đè khi trang Releases ghi rõ là cần (khi có nút mới trên thanh công cụ hoặc thay đổi cách hoạt động). Cài đè không làm mất gì.
 
 ## Gặp vấn đề
 

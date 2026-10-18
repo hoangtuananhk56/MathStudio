@@ -1,6 +1,29 @@
 /** Computes the current value (coordinates) of every object of a construction. */
 import { compileExpression } from './expr';
 import type { Construction, Def, Id, SolidKind, Transform } from './model';
+import {
+  add3,
+  centroid3,
+  clipLine,
+  convexHull,
+  edgePieces,
+  footOnLine,
+  footOnPlane,
+  lerp3,
+  linePlane,
+  lineLine3,
+  planeOf,
+  planePlane,
+  project,
+  section,
+  segmentPieces,
+  solidVertices,
+  sub3,
+  type Piece,
+  type Polyhedron,
+  type Vec3,
+  type View3,
+} from './space';
 
 /** A horizontal circle seen in perspective: the half behind (top half on screen) may be hidden. */
 export interface SolidEllipse {
@@ -18,7 +41,8 @@ export interface Vec {
 export type StraightKind = 'line' | 'segment' | 'ray' | 'vector';
 
 export type Value =
-  | { k: 'point'; p: Vec }
+  /** A point; `p3` is its place in space for solid geometry (p is then where it is drawn). */
+  | { k: 'point'; p: Vec; p3?: Vec3 }
   /** Infinite line / segment / ray / vector through `a` towards `b` (d = unit direction). */
   | { k: 'straight'; kind: StraightKind; a: Vec; b: Vec; d: Vec }
   | { k: 'circle'; c: Vec; r: number }
@@ -34,7 +58,21 @@ export type Value =
   | { k: 'numberLine'; o: Vec; from: number; to: number; step: number; unit: number; marks: number[] }
   /** A solid in oblique projection: its vertices, edges (hidden ones dashed) and ellipses. */
   | { k: 'solid'; kind: SolidKind; verts: Vec[]; edges: { a: number; b: number; hidden: boolean }[]; ellipses: SolidEllipse[]; circles: { c: Vec; r: number }[] }
-  | { k: 'function'; f: (x: number) => number; from?: number; to?: number };
+  | { k: 'function'; f: (x: number) => number; from?: number; to?: number }
+  /** A 3D solid: its vertices (drawn and in space), its faces, its edges cut into seen / hidden pieces. */
+  | { k: 'solid3'; verts: Vec[]; v3: Vec3[]; hull: Polyhedron; edges: Piece[][] }
+  /** A segment in space (also a drawn line where two planes meet), cut into seen / hidden pieces. */
+  | { k: 'seg3'; a: Vec; b: Vec; a3: Vec3; b3: Vec3; pieces: Piece[] }
+  /** A section of a solid: its corners (drawn and in space) and its sides cut into pieces. */
+  | { k: 'section3'; pts: Vec[]; pts3: Vec3[]; pieces: Piece[] };
+
+/** Solid geometry while evaluating: how the scene is drawn, and the solids so far (they hide things). */
+interface Scene {
+  view: View3;
+  /** The first solid sets the pivot of the turn. */
+  pivotSet: boolean;
+  solids: Polyhedron[];
+}
 
 export type Values = Map<Id, Value | null>;
 
@@ -384,10 +422,21 @@ export function solidShape(kind: SolidKind, at: Vec, w: number, d: number, h: nu
   }
 }
 
+/* ------------------------------ solid geometry ------------------------------ */
+
+function seg3Value(a3: Vec3, b3: Vec3, scene: Scene): Value | null {
+  return { k: 'seg3', a: project(a3, scene.view), b: project(b3, scene.view), a3, b3, pieces: segmentPieces(a3, b3, scene.solids, scene.view) };
+}
+
 /* --------------------------------- evaluate --------------------------------- */
 
-function evaluate(def: Def, values: Values): Value | null {
+function evaluate(def: Def, values: Values, scene: Scene): Value | null {
   const get = (id: Id) => values.get(id) ?? null;
+  const p3 = (id: Id): Vec3 | null => {
+    const v = get(id);
+    return v?.k === 'point' && v.p3 ? v.p3 : null;
+  };
+  const point3 = (q: Vec3 | null): Value | null => (q && Number.isFinite(q.x + q.y + q.z) ? { k: 'point', p: project(q, scene.view), p3: q } : null);
   const pt = (id: Id): Vec | null => {
     const v = get(id);
     return v?.k === 'point' ? v.p : null;
@@ -586,6 +635,86 @@ function evaluate(def: Def, values: Values): Value | null {
       const parts = base ? fractionParts(base, def.n, def.rows) : null;
       return parts ? { k: 'fraction', parts, filled: def.filled } : null;
     }
+    case 'solid3': {
+      const at = pt(def.at);
+      if (!at || def.w <= 0 || (def.kind !== 'tetra' && def.h <= 0)) return null;
+      const vs = solidVertices({ ...def, x: at.x, y: at.y });
+      if (!scene.pivotSet) {
+        // the scene turns about the centre of the first solid
+        scene.view = { ...scene.view, pivot: centroid3(vs) };
+        scene.pivotSet = true;
+      }
+      const hull = convexHull(vs);
+      const edges = edgePieces(hull, scene.solids, scene.view);
+      scene.solids.push(hull);
+      return { k: 'solid3', verts: vs.map((q) => project(q, scene.view)), v3: vs, hull, edges };
+    }
+    case 'v3': {
+      const s3 = get(def.solid);
+      return s3?.k === 'solid3' && s3.v3[def.i] ? point3(s3.v3[def.i]) : null;
+    }
+    case 'on3': {
+      const a = p3(def.a);
+      const b = p3(def.b);
+      return a && b ? point3(lerp3(a, b, def.k)) : null;
+    }
+    case 'centroid3': {
+      const ps = def.pts.map(p3);
+      return ps.length && ps.every(Boolean) ? point3(centroid3(ps as Vec3[])) : null;
+    }
+    case 'cross3': {
+      const [a, b, c, d] = [def.a, def.b, def.c, def.d].map(p3);
+      return a && b && c && d ? point3(lineLine3(a, b, c, d)) : null;
+    }
+    case 'linePlane3': {
+      const [a, b, q1, q2, q3] = [def.a, def.b, def.p, def.q, def.r].map(p3);
+      const pl = q1 && q2 && q3 ? planeOf(q1, q2, q3) : null;
+      return a && b && pl ? point3(linePlane(a, b, pl)) : null;
+    }
+    case 'foot3': {
+      const p = p3(def.p);
+      const a = p3(def.a);
+      const b = p3(def.b);
+      if (!p || !a || !b) return null;
+      if (!def.c) return point3(footOnLine(p, a, b));
+      const c = p3(def.c);
+      const pl = c ? planeOf(a, b, c) : null;
+      return pl ? point3(footOnPlane(p, pl)) : null;
+    }
+    case 'shift3': {
+      const [p, a, b] = [def.p, def.a, def.b].map(p3);
+      return p && a && b ? point3(add3(p, sub3(b, a))) : null;
+    }
+    case 'seg3': {
+      const a = p3(def.a);
+      const b = p3(def.b);
+      return a && b ? seg3Value(a, b, scene) : null;
+    }
+    case 'planeLine3': {
+      const ps = [def.a, def.b, def.c, def.d, def.e, def.f].map(p3);
+      if (!ps.every(Boolean)) return null;
+      const [a, b, c, d, e, f] = ps as Vec3[];
+      const P = planeOf(a, b, c);
+      const Q = planeOf(d, e, f);
+      const l = P && Q ? planePlane(P, Q) : null;
+      if (!l) return null;
+      const [u, w] = clipLine(l.o, l.d, scene.solids);
+      return seg3Value(u, w, scene);
+    }
+    case 'section3': {
+      const s3 = get(def.solid);
+      const [a, b, c] = [def.a, def.b, def.c].map(p3);
+      const pl = a && b && c ? planeOf(a, b, c) : null;
+      if (s3?.k !== 'solid3' || !pl) return null;
+      const pts3 = section(s3.hull, pl);
+      if (pts3.length < 3) return null;
+      const pieces = pts3.flatMap((q, i) => segmentPieces(q, pts3[(i + 1) % pts3.length], scene.solids, scene.view));
+      return { k: 'section3', pts: pts3.map((q) => project(q, scene.view)), pts3, pieces };
+    }
+    case 'secV3': {
+      const sec = get(def.section);
+      return sec?.k === 'section3' && sec.pts3[def.i] ? point3(sec.pts3[def.i]) : null;
+    }
     case 'text':
       return { k: 'text', p: { x: def.x, y: def.y }, text: def.text, latex: !!def.latex };
     case 'function': {
@@ -601,10 +730,11 @@ function evaluate(def: Def, values: Values): Value | null {
 /** Evaluates every object in order (definitions only reference earlier objects). */
 export function computeAll(c: Construction): Values {
   const values: Values = new Map();
+  const scene: Scene = { view: { yaw: c.yaw3 ?? 0, pivot: { x: 0, y: 0, z: 0 } }, pivotSet: false, solids: [] };
   for (const o of c.objects) {
     let v: Value | null = null;
     try {
-      v = evaluate(o.def, values);
+      v = evaluate(o.def, values, scene);
     } catch {
       v = null;
     }
@@ -696,5 +826,19 @@ export function distanceTo(v: Value, p: Vec): number {
       const y = v.f(p.x);
       return Number.isFinite(y) ? Math.abs(y - p.y) : Infinity;
     }
+    case 'solid3': {
+      let best = Infinity;
+      for (const [i, j] of v.hull.edges) {
+        const s2 = straight('segment', v.verts[i], v.verts[j]);
+        if (s2) best = Math.min(best, distanceTo(s2, p));
+      }
+      return best;
+    }
+    case 'seg3': {
+      const s2 = straight('segment', v.a, v.b);
+      return s2 ? distanceTo(s2, p) : dist(v.a, p);
+    }
+    case 'section3':
+      return insidePolygon(v.pts, p) ? 0 : distanceTo({ k: 'polygon', pts: v.pts }, p);
   }
 }

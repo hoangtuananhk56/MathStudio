@@ -160,11 +160,18 @@ class Scene {
   polygons: string[][] = [];
   circles: { id: Id; centre: string | null }[] = [];
   lastSolid: Id | null = null;
+  /** The sentence being run is a construction asked as a question: what it draws is the answer. */
+  answering = false;
   coords = false;
   /** given lengths to write on the figure */
   showLengths: [string, string, string][] = [];
 
   has = (n: string) => this.fig.has(n);
+  /** A point of a 3D solid (it has a place in space). */
+  is3 = (n: string) => {
+    const v = this.has(n) ? this.fig.values.get(this.id(n)) : null;
+    return v?.k === 'point' && !!v.p3;
+  };
   id = (n: string) => this.fig.id(n);
   pos = (n: string): Vec => (this.fig.values.get(this.id(n)) as Extract<Value, { k: 'point' }>).p;
   length(a: string, b: string): Measure | undefined {
@@ -184,6 +191,19 @@ class Scene {
     const ia = this.id(a);
     const ib = this.id(b);
     const key = [ia, ib].sort().join();
+    if (this.is3(a) && this.is3(b)) {
+      // a 3D segment, or an edge of the solid (its two vertices)
+      const values = this.fig.values;
+      const edge = this.fig.c.objects.some((o) => {
+        const v = values.get(o.id);
+        if (v?.k !== 'solid3') return false;
+        const i = this.fig.c.objects.find((x) => x.id === ia)?.def;
+        const j = this.fig.c.objects.find((x) => x.id === ib)?.def;
+        if (i?.t !== 'v3' || j?.t !== 'v3' || i.solid !== o.id || j.solid !== o.id) return false;
+        return v.hull.edges.some(([x, y]) => (x === i.i && y === j.i) || (x === j.i && y === i.i));
+      });
+      return edge || this.fig.c.objects.some((o) => o.def.t === 'seg3' && [o.def.a, o.def.b].sort().join() === key);
+    }
     return this.fig.c.objects.some(
       (o) =>
         !o.style.hidden &&
@@ -193,6 +213,7 @@ class Scene {
   }
   segment(a: string, b: string, style: Style = {}): Id | null {
     if (this.segmentExists(a, b) && !style.label && !style.ticks && !style.dash) return null;
+    if (this.is3(a) && this.is3(b)) return this.fig.add('s', { t: 'seg3', a: this.id(a), b: this.id(b) }, style);
     return this.fig.seg(a, b, style);
   }
   line(a: string, b: string, hidden = true): Id {
@@ -338,7 +359,9 @@ function triangleWith(s: Scene, v: string): [string, string, string] | null {
 /** Point X on line ST at distance `d` from S (negative: on the other side of S). */
 function pointAlong(s: Scene, name: string, S: string, T: string, d: number): string {
   const L = dist(s.pos(S), s.pos(T));
-  s.fig.add('p', { t: 'image', of: s.id(T), tr: { k: 'dilate', center: s.id(S), factor: d / L } }, { label: name });
+  // on an edge of a solid: the same ratio in space (a parallel projection keeps ratios)
+  if (s.is3(S) && s.is3(T)) s.fig.add('p', { t: 'on3', a: s.id(S), b: s.id(T), k: Math.round((d / L) * 1e6) / 1e6 }, { label: name });
+  else s.fig.add('p', { t: 'image', of: s.id(T), tr: { k: 'dilate', center: s.id(S), factor: d / L } }, { label: name });
   return name;
 }
 
@@ -875,30 +898,157 @@ function shapeIntents(): Intent[] {
         let dd = (nm.length >= 4 ? L(nm[0], nm[3]) ?? L(nm[1], nm[2]) : undefined) ?? d('chieu rong') ?? (kind === 'cube' ? w : w * 0.75);
         let h = d('chieu cao') ?? (top ? L(nm[0], top[0]) : undefined) ?? (apex ? L(apex, nm[0]) : undefined) ?? (kind === 'cube' ? w : 3.5);
         const r = d('ban kinh') ?? (d('duong kinh') ? d('duong kinh')! / 2 : undefined);
-        if (kind === 'cylinder' || kind === 'cone' || kind === 'sphere') {
-          w = 2 * (r ?? 1.6);
-          dd = 0;
-          h = kind === 'sphere' ? w : d('chieu cao') ?? 3.5;
+        if (kind !== 'cylinder' && kind !== 'cone' && kind !== 'sphere') {
+          // solids with flat faces are built in space: points, intersections, sections are exact
+          const input = m.input ?? '';
+          if (/day (?:la )?hinh vuong/.test(input) || /deu/.test(word)) dd = w;
+          const apexOverA = new RegExp(`${apex ?? 'S'}${nm[0]} vuong goc voi (?:mat phang |mp )?(?:\\(?${nm.join('')}\\)?|day)`).test(input);
+          const parallelogram = /day (?:la )?(?:hinh binh hanh|hinh thoi)/.test(input);
+          const trapezoid = /day (?:la )?hinh thang/.test(input);
+          const regular = /deu/.test(word) && kind !== 'cube' && kind !== 'cuboid';
+          const kind3 = kind === 'prism3' ? (regular ? 'prismReg' : 'prism') : kind === 'cube' || kind === 'cuboid' ? 'box' : regular ? 'pyramidReg' : 'pyramid';
+          const o = s.freeSpot();
+          const at = s.fig.add('p', { t: 'point', x: o.x, y: o.y }, { hidden: true });
+          const sid = s.fig.add('sol', {
+            t: 'solid3', kind: kind3, n: nm.length, w, d: dd, h, at,
+            ...(apexOverA ? { apex: 'A' as const } : {}),
+            ...(parallelogram ? { skew: Math.round(w * 0.3 * 100) / 100 } : {}),
+            ...(trapezoid ? { skew: Math.round(w * 0.2 * 100) / 100, top: 0.5 } : {}),
+          });
+          const labels = [...nm, ...(kind === 'pyramid3' || kind === 'pyramid4' ? [apex ?? 'S'] : top ?? nm.map((n) => `${n}'`))];
+          labels.forEach((n, i) => s.fig.add('p', { t: 'v3', solid: sid, i }, { label: n }));
+          s.lastSolid = sid;
+          const vi3: Record<string, string> = { box: kind === 'cube' ? 'Hình lập phương' : 'Hình hộp', prism: 'Lăng trụ', prismReg: 'Lăng trụ đều', pyramid: 'Hình chóp', pyramidReg: 'Hình chóp đều' };
+          return `${vi3[kind3]}${apex ? ` ${apex}.` : ' '}${nm.join('')}${top ? `.${top.join('')}` : kind3 === 'box' || kind3.startsWith('prism') ? `.${nm.map((n) => `${n}′`).join('')}` : ''}${apexOverA ? ` (${apex ?? 'S'}${nm[0]} ⊥ đáy)` : ''} (không gian)`;
         }
-        if (/day (?:la )?hinh vuong/.test(m.input ?? '') || /deu/.test(word)) dd = w;
-        const apexOverA = new RegExp(`${apex ?? 'S'}${nm[0]} vuong goc voi (?:mat phang |mp )?(?:\\(?${nm.join('')}\\)?|day)`).test(m.input ?? '');
+        // round solids, drawn the textbook way
+        w = 2 * (r ?? 1.6);
+        dd = 0;
+        h = kind === 'sphere' ? w : d('chieu cao') ?? 3.5;
         const o = s.freeSpot();
-        const at = s.fig.add('p', { t: 'point', x: o.x, y: o.y }, kind === 'cylinder' || kind === 'cone' || kind === 'sphere' ? { label: 'O' } : kind === 'prism3' || kind === 'pyramid3' ? { hidden: true } : { label: nm[0] });
-        const sid = s.fig.add('sol', { t: 'solid', kind, at, w, d: dd, h, ...(apexOverA ? { apexOverA: true } : {}) });
+        const at = s.fig.add('p', { t: 'point', x: o.x, y: o.y }, { label: 'O' });
+        const sid = s.fig.add('sol', { t: 'solid', kind, at, w, d: dd, h });
         const v = (i: number, label: string) => s.fig.add('p', { t: 'solidVertex', solid: sid, i }, { label });
-        if (kind === 'cuboid' || kind === 'cube' || kind === 'pyramid4') {
-          nm.slice(1, 4).forEach((n, i) => v(i + 1, n));
-          if (kind === 'pyramid4') v(4, apex ?? 'S');
-          else (top ?? nm.map((n) => `${n}'`)).forEach((n, i) => v(4 + i, n));
-        } else if (kind === 'prism3' || kind === 'pyramid3') {
-          nm.forEach((n, i) => v(i, n));
-          if (kind === 'prism3') (top ?? nm.map((n) => `${n}'`)).forEach((n, i) => v(3 + i, n));
-          else v(3, apex ?? 'S');
-        } else if (kind === 'cylinder') v(1, "O'");
+        if (kind === 'cylinder') v(1, "O'");
         else if (kind === 'cone') v(1, apex ?? 'S');
         s.lastSolid = sid;
-        const vi: Record<string, string> = { cuboid: 'Hình hộp chữ nhật', cube: 'Hình lập phương', prism3: 'Lăng trụ', pyramid3: 'Hình chóp', pyramid4: 'Hình chóp', cylinder: 'Hình trụ', cone: 'Hình nón', sphere: 'Hình cầu' };
-        return `${vi[kind]}${apex ? ` ${apex}.` : ' '}${nm.join('')}${top ? `.${top.join('')}` : ''}${apexOverA ? ` (${apex ?? 'S'}${nm[0]} ⊥ đáy)` : ''}`;
+        const vi: Record<string, string> = { cylinder: 'Hình trụ', cone: 'Hình nón', sphere: 'Hình cầu' };
+        return vi[kind];
+      },
+    },
+    {
+      name: 'tetrahedron', rank: 1,
+      re: re('(?:cho )?tu dien( deu)? {PPPP}(?: co (?:tat ca )?(?:cac )?canh (?:deu )?bang {N}{U})?'),
+      run: (m, s) => {
+        const nm = [m[2], m[3], m[4], m[5]];
+        const edge = m[6] ? toNum(m[6]) * (UNIT[m[7] ?? 'cm'] ?? 1) : s.length(nm[0], nm[1])?.cm ?? 5;
+        const o = s.freeSpot();
+        const at = s.fig.add('p', { t: 'point', x: o.x, y: o.y }, { hidden: true });
+        const sid = s.fig.add('sol', m[1] ? { t: 'solid3', kind: 'tetra', n: 3, w: edge, d: 0, h: 0, at } : { t: 'solid3', kind: 'pyramid', n: 3, w: edge, d: edge * 0.7, h: edge, at });
+        nm.forEach((n, i) => s.fig.add('p', { t: 'v3', solid: sid, i }, { label: n }));
+        s.lastSolid = sid;
+        return `Tứ diện${m[1] ? ' đều' : ''} ${nm.join('')} (không gian)`;
+      },
+    },
+  ];
+}
+
+/** Solid geometry: meeting points, lines where planes meet, sections, projections (grades 11–12). */
+function spaceIntents(): Intent[] {
+  const plane = '(?:mat phang |mp )?\\({PPP}\\)';
+  const three = (m: RegExpMatchArray, i: number) => [m[i], m[i + 1], m[i + 2]];
+  return [
+    {
+      name: 'line meets plane', rank: 3,
+      re: re(`(?:(?:goi |tim |xac dinh )?(?:giao diem )?{P} la giao diem (?:cua )?(?:duong thang |doan thang )?{PP} (?:va|voi) ${plane}|(?:tim |xac dinh )?giao diem(?: {P})? (?:cua )?(?:duong thang |doan thang )?{PP} (?:va|voi) ${plane})`),
+      needs: (m) => (m[1] ? [m[2], m[3], m[4], m[5], m[6]] : [m[8], m[9], m[10], m[11], m[12]]),
+      run: (m, s) => {
+        const [X0, a, b, p, q, r] = m[1] ? [m[1], m[2], m[3], m[4], m[5], m[6]] : [m[7], m[8], m[9], m[10], m[11], m[12]];
+        if (![a, b, p, q, r].every(s.is3)) return null;
+        const X = X0 && !s.has(X0) ? X0 : s.freeName(['I', 'J', 'K', 'E', 'F']);
+        s.segment(a, b);
+        s.fig.add('p', { t: 'linePlane3', a: s.id(a), b: s.id(b), p: s.id(p), q: s.id(q), r: s.id(r) }, { label: X, answer: s.answering });
+        return `${X} = ${a}${b} ∩ (${p}${q}${r})`;
+      },
+    },
+    {
+      name: 'line where two planes meet', rank: 3,
+      re: re(`(?:tim |xac dinh )?giao tuyen (?:cua )?(?:hai )?${plane} va ${plane}`),
+      needs: (m) => [...three(m, 1), ...three(m, 4)],
+      run: (m, s) => {
+        const ps = [...three(m, 1), ...three(m, 4)];
+        if (!ps.every(s.is3)) return null;
+        s.fig.add('gt', { t: 'planeLine3', a: s.id(ps[0]), b: s.id(ps[1]), c: s.id(ps[2]), d: s.id(ps[3]), e: s.id(ps[4]), f: s.id(ps[5]) }, { answer: s.answering });
+        return `Giao tuyến (${ps.slice(0, 3).join('')}) ∩ (${ps.slice(3).join('')})`;
+      },
+    },
+    {
+      name: 'section', rank: 3,
+      re: re(`(?:tim |xac dinh |dung |ve )?thiet dien (?:cua )?(?:hinh chop|hinh lap phuong|hinh hop|lang tru|hinh lang tru|tu dien)?(?: [A-Z.'′]+)?(?: (?:khi )?(?:cat|bi cat|cat boi|voi|tao boi))?(?: boi)? ${plane}`),
+      needs: (m) => three(m, 1),
+      run: (m, s) => {
+        const ps = three(m, 1);
+        if (!ps.every(s.is3) || !s.lastSolid) return null;
+        const sec = s.fig.add('sec', { t: 'section3', solid: s.lastSolid, a: s.id(ps[0]), b: s.id(ps[1]), c: s.id(ps[2]) }, { answer: s.answering });
+        // the corners that are not points yet get names
+        const v = s.fig.values.get(sec);
+        if (v?.k === 'section3') {
+          const known = [...s.fig.values.values()].flatMap((x) => (x?.k === 'point' && x.p3 ? [x.p3] : []));
+          v.pts3.forEach((q, i) => {
+            if (known.some((k) => Math.hypot(k.x - q.x, k.y - q.y, k.z - q.z) < 1e-6)) return;
+            s.fig.add('p', { t: 'secV3', section: sec, i }, { label: s.freeName(['E', 'F', 'G', 'H', 'K', 'Q', 'R']), answer: s.answering });
+          });
+        }
+        return `Thiết diện (${ps.join('')})`;
+      },
+    },
+    {
+      name: 'projection in space', rank: 3,
+      re: re(`(?:goi )?{P} la hinh chieu(?: vuong goc)? (?:cua )?{P} (?:tren|len|xuong) (?:duong thang |canh |doan )?(?:${plane}|{PP})`),
+      needs: (m) => (m[3] ? [m[2], m[3], m[4], m[5]] : [m[2], m[6], m[7]]),
+      run: (m, s) => {
+        const [H, P] = [m[1], m[2]];
+        if (s.has(H) || !s.is3(P)) return null;
+        if (m[3]) {
+          if (![m[3], m[4], m[5]].every(s.is3)) return null;
+          s.fig.add('p', { t: 'foot3', p: s.id(P), a: s.id(m[3]), b: s.id(m[4]), c: s.id(m[5]) }, { label: H });
+        } else {
+          if (![m[6], m[7]].every(s.is3)) return null;
+          s.fig.add('p', { t: 'foot3', p: s.id(P), a: s.id(m[6]), b: s.id(m[7]) }, { label: H });
+        }
+        s.segment(P, H);
+        return `${H}: hình chiếu của ${P}`;
+      },
+    },
+    {
+      // "đáy ABCD là hình bình hành tâm O"
+      name: 'base with its centre', rank: 3,
+      re: re('(?<=(?:hinh binh hanh|hinh vuong|hinh chu nhat|hinh thoi) )tam {P}'),
+      needs: (_m, s) => (s.lastSolid ? [] : ['?']),
+      run: (m, s) => {
+        const O = m[1];
+        if (s.has(O)) return null;
+        const base = s.fig.c.objects.filter((o) => o.def.t === 'v3' && o.def.solid === s.lastSolid).slice(0, 4).map((o) => o.style.label ?? '');
+        if (base.length !== 4 || !base.every(s.is3)) return null;
+        s.fig.add('p', { t: 'cross3', a: s.id(base[0]), b: s.id(base[2]), c: s.id(base[1]), d: s.id(base[3]) }, { label: O });
+        return `${O}: tâm đáy ${base.join('')}`;
+      },
+    },
+    {
+      name: 'centre of the base', rank: 3,
+      re: re('(?:goi )?{P} la (?:tam|giao diem hai duong cheo) (?:cua )?(?:day|mat day|hinh vuong|hinh chu nhat|hinh binh hanh|hinh thoi|hinh vuong|tu giac)?(?: {PPPP})?'),
+      needs: (m, s) => (m[2] ? [m[2], m[3], m[4], m[5]] : s.lastSolid ? [] : ['?']),
+      run: (m, s) => {
+        const O = m[1];
+        if (s.has(O)) return null;
+        let q = m[2] ? [m[2], m[3], m[4], m[5]] : null;
+        if (!q && s.lastSolid) {
+          const base = s.fig.c.objects.filter((o) => o.def.t === 'v3' && o.def.solid === s.lastSolid).slice(0, 4).map((o) => o.style.label ?? '');
+          q = base.length === 4 ? base : null;
+        }
+        if (!q || !q.every(s.is3)) return null;
+        s.fig.add('p', { t: 'cross3', a: s.id(q[0]), b: s.id(q[2]), c: s.id(q[1]), d: s.id(q[3]) }, { label: O });
+        return `${O}: tâm ${q.join('')}`;
       },
     },
   ];
@@ -1198,7 +1348,8 @@ function elementIntents(): Intent[] {
           s.segment(c, d);
           return null;
         }
-        s.fig.add('p', { t: 'intersection', a: s.line(a, b), b: s.line(c, d), index: 0 }, { label: X });
+        if ([a, b, c, d].every(s.is3)) s.fig.add('p', { t: 'cross3', a: s.id(a), b: s.id(b), c: s.id(c), d: s.id(d) }, { label: X });
+        else s.fig.add('p', { t: 'intersection', a: s.line(a, b), b: s.line(c, d), index: 0 }, { label: X });
         s.segment(a, b);
         s.segment(c, d);
         return `${X} là giao điểm của ${a}${b} và ${c}${d}`;
@@ -1641,7 +1792,10 @@ export function teachPhrase(clause: string, replacement: string): UserPhrase {
 
 /* ----------------------------------------------------------------- driver */
 
-const INTENTS = [...measureIntents(), ...shapeIntents(), ...elementIntents()].sort((a, b) => a.rank - b.rank);
+const INTENTS = [...measureIntents(), ...shapeIntents(), ...elementIntents(), ...spaceIntents()].sort((a, b) => a.rank - b.rank);
+
+/** Questions that are constructions in solid geometry: drawn, as the answer (left out of the question version). */
+const SPACE_QUESTION = /^(?:hay )?(?:tim|xac dinh|dung|ve)\b.*\b(?:giao tuyen|giao diem|thiet dien)\b/;
 
 /** Builds the figure described by `text`. */
 export function figureFromText(text: string, opts: ParseOptions = {}): TextFigure {
@@ -1649,6 +1803,8 @@ export function figureFromText(text: string, opts: ParseOptions = {}): TextFigur
   const done: string[] = [];
   const missed: string[] = [];
   const reports: SentenceReport[] = [];
+  /** sentences asking for a construction (solid geometry): drawn as the answer */
+  const answerSentences = new Set<number>();
 
   interface Item { intent: Intent; m: RegExpMatchArray; sentence: number }
   const items: Item[] = [];
@@ -1674,10 +1830,12 @@ export function figureFromText(text: string, opts: ParseOptions = {}): TextFigur
       rep.status = 'off';
       return;
     }
-    if (QUESTION.test(t) || ASKS.test(t) || !(GEO.test(t) || namesIn(t).length)) {
+    const spaceQuestion = SPACE_QUESTION.test(t);
+    if (!spaceQuestion && (QUESTION.test(t) || ASKS.test(t) || !(GEO.test(t) || namesIn(t).length))) {
       rep.status = 'skip';
       return;
     }
+    if (spaceQuestion) answerSentences.add(si);
     // every intent proposes its matches; the longest (most specific) reading of each part wins
     const claimed = sents[si].claimed;
     const found: { intent: Intent; m: RegExpMatchArray; a: number; b: number }[] = [];
@@ -1711,6 +1869,7 @@ export function figureFromText(text: string, opts: ParseOptions = {}): TextFigur
   let pending = items.slice();
   const run = (it: Item) => {
     try {
+      scene.answering = answerSentences.has(it.sentence);
       const r = it.intent.run(it.m, scene);
       const list = r === null ? [] : Array.isArray(r) ? r : [r];
       reports[it.sentence].done.push(...list);

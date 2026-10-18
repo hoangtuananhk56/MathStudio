@@ -28,8 +28,12 @@ const ADDED: Record<Exclude<Grade, 'all'>, ToolId[]> = {
   8: ['midline', 'diagonals', 'pyramid3', 'pyramid4'],
   // đường tròn, cung, tiếp tuyến, phép quay của đa giác đều
   9: ['circle3', 'arc', 'tangent', 'inscribedAngle', 'rotate', 'cone'],
-  // vectơ, phép biến hình
-  10: ['vector', 'translate', 'dilate'],
+  // vectơ, phép biến hình; lớp 11–12: hình học không gian (dựng trong không gian thật)
+  10: [
+    'vector', 'translate', 'dilate',
+    'spPyramid', 'spPyramidA', 'spPyramidPar', 'spPyramidTrap', 'spPyramid3', 'spPyramid3A', 'spPyramidReg', 'spTetra', 'spPrism', 'spBox', 'spBoxPar',
+    'spMid', 'spOn', 'spSeg', 'spCentroid', 'spCross', 'spLinePlane', 'spPlaneLine', 'spSection', 'spParallel', 'spFoot', 'spFootLine',
+  ],
 };
 
 /** All tools available in a year (cumulative), or every tool. */
@@ -128,6 +132,7 @@ const STEPS: Partial<Record<ToolId, Txt[]>> = {
 };
 
 const PICK_TEXT: Record<Pick, Txt> = {
+  point3: ['Nhấp một điểm của hình không gian (hoặc một cạnh để lấy điểm trên cạnh đó)', 'Click a point of the 3D figure (or an edge, for a point on it)'],
   point: ['Nhấp chọn một điểm (hoặc chỗ trống để tạo điểm mới)', 'Click a point (or empty space for a new one)'],
   straight: ['Nhấp vào một đường thẳng / đoạn thẳng', 'Click a line or segment'],
   round: ['Nhấp vào một đường tròn', 'Click a circle'],

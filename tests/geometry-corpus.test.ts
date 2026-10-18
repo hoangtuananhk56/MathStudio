@@ -30,6 +30,9 @@ function check(c: Construction, v: Values, e: Expect): string[] {
       if (val?.k === 'straight') return [val.a, val.b].every((q) => d(q, a) < 1e-6 || d(q, b) < 1e-6) && d(val.a, val.b) > 1e-6;
       if (val?.k === 'polygon') return val.pts.some((q, i) => { const r = val.pts[(i + 1) % val.pts.length]; return (d(q, a) < 1e-6 && d(r, b) < 1e-6) || (d(q, b) < 1e-6 && d(r, a) < 1e-6); });
       if (val?.k === 'solid') return val.edges.some((ed) => [val.verts[ed.a], val.verts[ed.b]].every((q) => d(q, a) < 1e-6 || d(q, b) < 1e-6));
+      // solid geometry: an edge of the solid, or a segment in space
+      if (val?.k === 'solid3') return val.hull.edges.some(([i, j]) => [val.verts[i], val.verts[j]].every((q) => d(q, a) < 1e-6 || d(q, b) < 1e-6));
+      if (val?.k === 'seg3') return [val.a, val.b].every((q) => d(q, a) < 1e-6 || d(q, b) < 1e-6) && d(val.a, val.b) > 1e-6;
       return false;
     });
     if (!drawn) bad.push(`chưa vẽ ${s}`);
@@ -62,7 +65,7 @@ function check(c: Construction, v: Values, e: Expect): string[] {
     const [c2, d2] = two(s2).map(need);
     if (a && b && c2 && d2 && Math.abs(d(a, b) / d(c2, d2) - k) > 1e-3) bad.push(`${s1}/${s2} = ${(d(a, b) / d(c2, d2)).toFixed(3)} (cần ${k.toFixed(3)})`);
   }
-  if (e.solid && ![...v.values()].some((x) => x?.k === 'solid')) bad.push('chưa vẽ hình khối');
+  if (e.solid && ![...v.values()].some((x) => x?.k === 'solid' || x?.k === 'solid3')) bad.push('chưa vẽ hình khối');
   for (const [l, [x, y]] of Object.entries(e.at ?? {})) {
     const p = need(l);
     if (p && (Math.abs(p.x - x) > 1e-9 || Math.abs(p.y - y) > 1e-9)) bad.push(`${l} ở (${p.x}; ${p.y})`);

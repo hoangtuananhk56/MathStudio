@@ -5,6 +5,30 @@ const P = (d: string) => <path d={d} fill="none" stroke="currentColor" strokeWid
 const Dot = ({ x, y }: { x: number; y: number }) => <circle cx={x} cy={y} r="2.3" fill="var(--accent-dot, #1a73e8)" />;
 
 const ICONS: Record<ToolId, JSX.Element> = {
+  // solid geometry: back edges dashed
+  spPyramid: <>{P('M3 19h12l5-5M12 3L3 19M12 3l3 16M12 3l8 11')}<path d="M3 19l5-5h12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /><path d="M12 3L8 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPyramidA: <>{P('M4 4v15h11l5-5M4 4l11 15M4 4l16 10')}<path d="M4 19l4-5h12M4 4l4 10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPyramidPar: <>{P('M2 19h12l7-5M11 3L2 19M11 3l3 16M11 3l10 11')}<path d="M2 19l5-5h14M11 3L7 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPyramidTrap: <>{P('M2 19h14l3-5M11 3L2 19M11 3l5 16M11 3l8 11')}<path d="M2 19l6-5h11M11 3L8 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPyramid3: <>{P('M3 15l7 5 11-5M12 3L3 15M12 3l-2 17M12 3l9 12')}<path d="M3 15h18" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPyramid3A: <>{P('M4 4v11l6 5 11-5M4 4l6 16M4 4l17 11')}<path d="M4 15h17" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPyramidReg: <>{P('M3 18l5 3h8l5-3M12 3L3 18M12 3l-4 18M12 3l4 18M12 3l9 15')}<path d="M3 18l5-3h8l5 3" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spTetra: <>{P('M3 18l8 3 10-5M12 3L3 18M12 3l-1 18M12 3l9 13')}<path d="M3 18l18-2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spPrism: <>{P('M3 8l6 3 12-3M3 8v11l6 3 12-3V8M9 11v11')}<path d="M3 19h18M3 8h18" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spBox: <>{P('M3 9h13v12H3zM3 9l5-5h13l-5 5M21 4v12l-5 5')}<path d="M3 21l5-5h13M8 16V4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spBoxPar: <>{P('M2 9h13l-2 12H0zM2 9l7-5h13l-7 5M22 4l-2 12-7 5')}<path d="M0 21l7-5h13M7 16l2-12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spMid: <>{P('M3 19L12 3l9 16')}<Dot x={16.5} y={11} /><path d="M3 19h18" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /></>,
+  spOn: <>{P('M3 19L12 3l9 16')}<Dot x={9} y={8.3} /><text x="13" y="21" fontSize="7" fill="currentColor" fontFamily="Segoe UI, Arial">1/3</text></>,
+  spSeg: <>{P('M3 19L12 3l9 16M3 19l8-4')}<path d="M11 15l10 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /><Dot x={3} y={19} /><Dot x={21} y={19} /></>,
+  spCentroid: <>{P('M3 19L12 3l9 16z')}<path d="M3 19l13.5-8M21 19L7.5 11M12 3v16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeDasharray="2 2" /><Dot x={12} y={13.7} /></>,
+  spCross: <>{P('M3 18L21 7M4 6l16 13')}<Dot x={12.6} y={12.2} /></>,
+  spLinePlane: <>{P('M2 15l6-6h14l-6 6zM12 2v8')}<path d="M12 10v4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 2" /><Dot x={12} y={12} />{P('M12 15v7')}</>,
+  spPlaneLine: <>{P('M2 17l6-6h14l-6 6zM8 3l8 0 0 14-8 0z')}<path d="M8 11h8" fill="none" stroke="#1a73e8" strokeWidth="2" /></>,
+  spSection: <>{P('M3 19h12l5-5M12 3L3 19M12 3l3 16M12 3l8 11')}<path d="M6 13l5 2 6-3-3-2z" fill="#bcd4f6" stroke="#1a73e8" strokeWidth="1.2" /></>,
+  spParallel: <>{P('M3 19L12 3l9 16M7 12h9')}<Dot x={7} y={12} /><Dot x={16} y={12} /></>,
+  spFoot: <>{P('M2 17l6-6h14l-6 6zM12 3v11')}<Dot x={12} y={3} /><Dot x={12} y={14} /><path d="M12 11h2v2" fill="none" stroke="currentColor" strokeWidth="1.1" /></>,
+  spFootLine: <>{P('M2 19L22 9M12 3l2.2 11')}<Dot x={12} y={3} /><Dot x={14.2} y={14} /></>,
+
   move: P('M5 3l13 8-6 1.5L9.5 19z'),
   point: <><Dot x={12} y={12} /><path d="M12 5v3M12 16v3M5 12h3M16 12h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></>,
   intersect: <>{P('M3 18L21 6M3 6l18 12')}<Dot x={12} y={12} /></>,

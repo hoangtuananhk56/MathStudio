@@ -57,6 +57,14 @@ export function fieldsFor(ask: Ask): Field[] | null {
       ];
     case 'cube':
       return [{ label: ['Cạnh', 'Edge'], unit: 'cm', chips: [2, 2.5, 3, 4], initial: init[0] }];
+    case 'pyrReg':
+      return [
+        { label: ['Số cạnh đáy', 'Sides of the base'], chips: [3, 4, 5, 6], initial: init[0] },
+        { label: ['Cạnh đáy', 'Base side'], unit: 'cm', chips: [3, 4, 5], initial: init[1] },
+        { label: ['Chiều cao', 'Height'], unit: 'cm', chips: [3, 4, 5, 6], initial: init[2] },
+      ];
+    case 'ratio':
+      return [{ label: ['Tỉ số AM : AB (ví dụ 1/3; lớn hơn 1: M nằm ngoài AB)', 'Ratio AM : AB (e.g. 1/3; over 1: M beyond B)'], text: true, initial: init[0] }];
     case 'prism':
     case 'pyr':
       return [

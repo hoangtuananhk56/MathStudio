@@ -427,6 +427,71 @@ export const TEMPLATES: Template[] = [
     f.pt('I', 1, -2);
     return f;
   }),
+  /* ---------------- lớp 11–12: hình không gian (dựng trong không gian thật) ---------------- */
+  T('spGiaoTuyen', 10, 'Lớp 11 · Hình chóp đáy hình bình hành: giao tuyến (SAC) và (SBD)', 'Year 11 · Pyramid: (SAC) ∩ (SBD)', () => {
+    const f = space('spPyramidPar', '5; 4; 5');
+    last(f, f.tool('spCross', ['A', 'C', 'B', 'D']), 'O');
+    f.tool('spSeg', ['A', 'C']);
+    f.tool('spSeg', ['B', 'D']);
+    f.tool('spPlaneLine', ['S', 'A', 'C', 'S', 'B', 'D']);
+    return f;
+  }),
+  T('spGiaoDiem', 10, 'Lớp 11 · Giao điểm của AM với (SBD), M là trung điểm SC', 'Year 11 · Where AM meets (SBD), M midpoint of SC', () => {
+    const f = space('spPyramidPar', '5; 4; 5');
+    last(f, f.tool('spCross', ['A', 'C', 'B', 'D']), 'O');
+    f.tool('spSeg', ['A', 'C']);
+    f.tool('spSeg', ['B', 'D']);
+    f.tool('spSeg', ['S', 'O']);
+    last(f, f.tool('spMid', ['S', 'C']), 'M');
+    f.tool('spSeg', ['A', 'M']);
+    last(f, f.tool('spLinePlane', ['A', 'M', 'S', 'B', 'D']), 'I');
+    return f;
+  }),
+  T('spThietDien', 10, 'Lớp 11 · Thiết diện của tứ diện ABCD với mặt phẳng (MNP)', 'Year 11 · Section of tetrahedron ABCD by (MNP)', () => {
+    const f = new Fig();
+    const at = f.pt('A', 0, 0);
+    f.tool('spPyramid3', [at], '5; 3,5; 5', { fresh: [at] });
+    // the tetrahedron named ABCD: apex D
+    f.name(f.id('S'), 'D');
+    last(f, f.tool('spOn', ['D', 'A'], '1/3'), 'M');
+    last(f, f.tool('spOn', ['D', 'B'], '1/2'), 'N');
+    last(f, f.tool('spOn', ['B', 'C'], '1/3'), 'P');
+    f.tool('spSection', ['M', 'N', 'P']);
+    return f;
+  }),
+  T('spSAvuong', 10, 'Lớp 11 · Hình chóp S.ABCD có SA ⊥ (ABCD), đáy hình vuông', 'Year 11 · Pyramid S.ABCD, SA ⊥ (ABCD), square base', () => {
+    const f = space('spPyramidA', '4; 4; 5');
+    f.tool('spSeg', ['A', 'C']);
+    last(f, f.tool('spFootLine', ['A', 'S', 'B']), 'H');
+    return f;
+  }),
+  T('spLapPhuong', 10, 'Lớp 11 · Hình lập phương: thiết diện qua B và trung điểm M, N của AA′, CC′', 'Year 11 · Cube: section through B and the midpoints M, N of AA′, CC′', () => {
+    const f = space('spBox', '4; 4; 4');
+    last(f, f.tool('spMid', ['A', 'A′']), 'M');
+    last(f, f.tool('spMid', ['C', 'C′']), 'N');
+    f.tool('spSection', ['B', 'M', 'N']);
+    return f;
+  }),
+  T('spLangTru', 10, 'Lớp 12 · Lăng trụ ABC.A′B′C′: trọng tâm G của tam giác A′B′C′', 'Year 12 · Prism ABC.A′B′C′: centroid G of A′B′C′', () => {
+    const f = space('spPrism', '5; 3,5; 4');
+    last(f, f.tool('spCentroid', ['A′', 'B′', 'C′']), 'G');
+    f.tool('spSeg', ['A', 'G']);
+    return f;
+  }),
 ];
+
+/** A solid made with its tool, placed at (0; 0). */
+function space(tool: 'spPyramidPar' | 'spPyramidA' | 'spBox' | 'spPrism', sizes: string): Fig {
+  const f = new Fig();
+  const at = f.pt('A', 0, 0);
+  f.tool(tool, [at], sizes, { fresh: [at] });
+  return f;
+}
+
+/** Names the point a tool just made. */
+function last(f: Fig, made: { id: string; def: { t: string } }[], label: string): void {
+  const p = [...made].reverse().find((o) => ['on3', 'cross3', 'linePlane3', 'centroid3', 'foot3', 'secV3'].includes(o.def.t));
+  if (p) f.name(p.id, label);
+}
 
 export const templatesForGrade = (g: number | 'all') => TEMPLATES.filter((t) => g === 'all' || t.grade <= g);

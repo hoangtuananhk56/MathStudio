@@ -64,6 +64,31 @@ export type Def =
   | { t: 'solid'; kind: SolidKind; at: Id; w: number; d: number; h: number; apexOverA?: boolean }
   /** Vertex i of a solid, so it can be named and used (A, B, C, D, A′…, S). */
   | { t: 'solidVertex'; solid: Id; i: number }
+  // solid geometry (grades 11–12): true 3D points, drawn in oblique projection (see space.ts)
+  /** A textbook solid (pyramid, prism, box…), its first vertex where the point `at` is. */
+  | { t: 'solid3'; kind: Solid3Kind; n: number; w: number; d: number; h: number; skew?: number; top?: number; apex?: 'center' | 'A'; at: Id }
+  /** Vertex i of a 3D solid (A, B, C…, then S or A′, B′…). */
+  | { t: 'v3'; solid: Id; i: number }
+  /** Point of segment AB at ratio k from A (k = 0.5: the midpoint); dragging changes k. */
+  | { t: 'on3'; a: Id; b: Id; k: number }
+  /** Centre (centroid) of points: centre of a base, centroid of a triangle. */
+  | { t: 'centroid3'; pts: Id[] }
+  /** Where lines AB and CD meet (they must lie in one plane). */
+  | { t: 'cross3'; a: Id; b: Id; c: Id; d: Id }
+  /** Where line AB meets plane (PQR). */
+  | { t: 'linePlane3'; a: Id; b: Id; p: Id; q: Id; r: Id }
+  /** Orthogonal projection of P on plane (ABC), or on line AB when there is no c. */
+  | { t: 'foot3'; p: Id; a: Id; b: Id; c?: Id }
+  /** The point P + vector AB (to draw the parallel to AB through P). */
+  | { t: 'shift3'; p: Id; a: Id; b: Id }
+  /** Segment between two 3D points (hidden parts dashed). */
+  | { t: 'seg3'; a: Id; b: Id }
+  /** Line where planes (ABC) and (DEF) meet, drawn across the solid. */
+  | { t: 'planeLine3'; a: Id; b: Id; c: Id; d: Id; e: Id; f: Id }
+  /** Section of a 3D solid by plane (ABC). */
+  | { t: 'section3'; solid: Id; a: Id; b: Id; c: Id }
+  /** Corner i of a section (named like M, N, P, Q). */
+  | { t: 'secV3'; section: Id; i: number }
   // annotations
   | { t: 'text'; x: number; y: number; text: string; latex?: boolean }
   | { t: 'function'; expr: string; from?: number; to?: number };
@@ -71,6 +96,8 @@ export type Def =
 export type DashStyle = 'solid' | 'dashed' | 'dotted';
 
 export type SolidKind = 'cuboid' | 'cube' | 'prism3' | 'pyramid3' | 'pyramid4' | 'cylinder' | 'cone' | 'sphere';
+
+export type Solid3Kind = 'pyramid' | 'prism' | 'box' | 'pyramidReg' | 'prismReg' | 'tetra';
 
 export interface Style {
   color?: string;
@@ -137,6 +164,8 @@ export interface Construction {
   compass?: boolean;
   /** Parts of a typed exercise still to draw by hand (editor checklist). */
   todo?: string[];
+  /** Solid geometry: the scene turned about a vertical axis (degrees; 0 = the textbook view). */
+  yaw3?: number;
 }
 
 export function emptyConstruction(): Construction {
@@ -202,6 +231,29 @@ export function dependencies(def: Def): Id[] {
       return [def.at];
     case 'solidVertex':
       return [def.solid];
+    case 'solid3':
+      return [def.at];
+    case 'v3':
+      return [def.solid];
+    case 'on3':
+    case 'seg3':
+      return [def.a, def.b];
+    case 'centroid3':
+      return [...def.pts];
+    case 'cross3':
+      return [def.a, def.b, def.c, def.d];
+    case 'linePlane3':
+      return [def.a, def.b, def.p, def.q, def.r];
+    case 'foot3':
+      return def.c ? [def.p, def.a, def.b, def.c] : [def.p, def.a, def.b];
+    case 'shift3':
+      return [def.p, def.a, def.b];
+    case 'planeLine3':
+      return [def.a, def.b, def.c, def.d, def.e, def.f];
+    case 'section3':
+      return [def.solid, def.a, def.b, def.c];
+    case 'secV3':
+      return [def.section];
     case 'image': {
       const tr = def.tr;
       const extra = tr.k === 'reflectLine' ? tr.line : tr.k === 'translate' ? tr.vector : tr.center;
@@ -212,5 +264,5 @@ export function dependencies(def: Def): Id[] {
 
 /** True for definitions whose value is a point. */
 export function isPointDef(def: Def): boolean {
-  return ['point', 'pointOn', 'midpoint', 'intersection', 'polyVertex', 'pointPolar', 'foot', 'center', 'solidVertex'].includes(def.t);
+  return ['point', 'pointOn', 'midpoint', 'intersection', 'polyVertex', 'pointPolar', 'foot', 'center', 'solidVertex', 'v3', 'on3', 'centroid3', 'cross3', 'linePlane3', 'foot3', 'shift3', 'secV3'].includes(def.t);
 }

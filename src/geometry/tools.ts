@@ -8,9 +8,10 @@
  * perpendicular…), and they come with the usual textbook marks.
  */
 import { computeAll, dist, dot, sub, type Value, type Values, type Vec } from './engine';
-import { isPointDef, type Construction, type Def, type GeoObject, type Id, type SolidKind, type Style, type Transform } from './model';
+import { isPointDef, type Construction, type Def, type GeoObject, type Id, type Solid3Kind, type SolidKind, type Style, type Transform } from './model';
+import { dist3, inside, planeOf, section, solidNames, type Plane, type Vec3 } from './space';
 
-export type Pick = 'point' | 'straight' | 'round' | 'curve' | 'object' | 'vector' | 'segment' | 'segmentOrAngle' | 'measurable' | 'ray' | 'fillable' | 'quad';
+export type Pick = 'point' | 'point3' | 'straight' | 'round' | 'curve' | 'object' | 'vector' | 'segment' | 'segmentOrAngle' | 'measurable' | 'ray' | 'fillable' | 'quad';
 
 export type ToolId =
   | 'move' | 'point' | 'pointXY' | 'intersect' | 'midpoint' | 'foot'
@@ -24,11 +25,15 @@ export type ToolId =
   | 'angle' | 'angleLines' | 'angleFixed' | 'equalMark' | 'measure'
   | 'reflectLine' | 'reflectPoint' | 'rotate' | 'translate' | 'dilate'
   | 'numberLine' | 'cuboid' | 'cube' | 'prism3' | 'pyramid3' | 'pyramid4' | 'cylinder' | 'cone' | 'sphere'
-  | 'text' | 'function' | 'delete';
+  | 'text' | 'function' | 'delete'
+  // solid geometry (grades 11–12)
+  | 'spPyramid' | 'spPyramidA' | 'spPyramidPar' | 'spPyramidTrap' | 'spPyramid3' | 'spPyramid3A' | 'spPyramidReg' | 'spTetra'
+  | 'spPrism' | 'spBox' | 'spBoxPar'
+  | 'spMid' | 'spOn' | 'spSeg' | 'spCentroid' | 'spCross' | 'spLinePlane' | 'spPlaneLine' | 'spSection' | 'spParallel' | 'spFoot' | 'spFootLine';
 
 /** A value the tool needs typed in (radius, angle, number of sides…). */
 export interface Ask {
-  key: 'n' | 'r' | 'deg' | 'k' | 'text' | 'expr' | 'xy' | 'len' | 'sss' | 'sas' | 'asa' | 'frac' | 'numline' | 'box' | 'cube' | 'prism' | 'pyr' | 'round' | 'ball';
+  key: 'n' | 'r' | 'deg' | 'k' | 'text' | 'expr' | 'xy' | 'len' | 'sss' | 'sas' | 'asa' | 'frac' | 'numline' | 'box' | 'cube' | 'prism' | 'pyr' | 'round' | 'ball' | 'pyrReg' | 'ratio';
   vi: string;
   en: string;
   initial: string;
@@ -213,6 +218,57 @@ export const TOOL_GROUPS: ToolGroup[] = [
     ],
   },
   {
+    id: 'space', vi: 'Không gian (lớp 11–12)', en: 'Solid geometry (years 11–12)',
+    tools: [
+      T('spPyramid', 'Hình chóp S.ABCD (đáy hình chữ nhật)', 'Pyramid S.ABCD (rectangle base)', ['point'], 'Nhấp chỗ đặt đỉnh A của đáy rồi nhập kích thước. Hình dựng trong không gian thật: lấy điểm, giao điểm, giao tuyến, thiết diện đều đúng.', 'Click where base vertex A goes, then the sizes. A true 3D figure: points, intersections, sections are exact.', {
+        ask: { key: 'pyr', vi: 'Đáy dài; đáy rộng; chiều cao (cm)', en: 'Base length; width; height (cm)', initial: '5; 4; 5' },
+      }),
+      T('spPyramidA', 'Hình chóp S.ABCD có SA ⊥ đáy', 'Pyramid S.ABCD, SA ⊥ base', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập kích thước (S ở ngay trên A).', 'Click where A goes, then the sizes (S right above A).', {
+        ask: { key: 'pyr', vi: 'Đáy dài; đáy rộng; chiều cao SA (cm)', en: 'Base length; width; height SA (cm)', initial: '5; 4; 5' },
+      }),
+      T('spPyramidPar', 'Hình chóp đáy hình bình hành', 'Pyramid, parallelogram base', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập kích thước.', 'Click where A goes, then the sizes.', {
+        ask: { key: 'pyr', vi: 'Cạnh AB; chiều sâu đáy; chiều cao (cm)', en: 'Side AB; base depth; height (cm)', initial: '5; 4; 5' },
+      }),
+      T('spPyramidTrap', 'Hình chóp đáy hình thang (AB // CD)', 'Pyramid, trapezoid base (AB ∥ CD)', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập kích thước (CD = AB/2).', 'Click where A goes, then the sizes (CD = AB/2).', {
+        ask: { key: 'pyr', vi: 'Đáy lớn AB; chiều sâu đáy; chiều cao (cm)', en: 'Long base AB; depth; height (cm)', initial: '6; 4; 5' },
+      }),
+      T('spPyramid3', 'Hình chóp S.ABC', 'Pyramid S.ABC', ['point'], 'Nhấp chỗ đặt hình rồi nhập kích thước.', 'Click where it goes, then the sizes.', {
+        ask: { key: 'pyr', vi: 'Cạnh đáy; chiều sâu đáy; chiều cao (cm)', en: 'Base; depth; height (cm)', initial: '5; 3,5; 5' },
+      }),
+      T('spPyramid3A', 'Hình chóp S.ABC có SA ⊥ đáy', 'Pyramid S.ABC, SA ⊥ base', ['point'], 'Nhấp chỗ đặt hình rồi nhập kích thước (S ở ngay trên A).', 'Click where it goes, then the sizes (S right above A).', {
+        ask: { key: 'pyr', vi: 'Cạnh đáy; chiều sâu đáy; chiều cao SA (cm)', en: 'Base; depth; height SA (cm)', initial: '5; 3,5; 5' },
+      }),
+      T('spPyramidReg', 'Hình chóp đều', 'Regular pyramid', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập số cạnh đáy, cạnh đáy, chiều cao.', 'Click where A goes, then the number of sides, the side and the height.', {
+        ask: { key: 'pyrReg', vi: 'Số cạnh đáy; cạnh đáy; chiều cao (cm)', en: 'Sides; base side; height (cm)', initial: '4; 4; 5' },
+      }),
+      T('spTetra', 'Tứ diện đều ABCD', 'Regular tetrahedron ABCD', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập độ dài cạnh.', 'Click where A goes, then the edge.', {
+        ask: { key: 'cube', vi: 'Cạnh (cm)', en: 'Edge (cm)', initial: '5' },
+      }),
+      T('spPrism', 'Lăng trụ ABC.A′B′C′', 'Prism ABC.A′B′C′', ['point'], 'Nhấp chỗ đặt hình rồi nhập kích thước.', 'Click where it goes, then the sizes.', {
+        ask: { key: 'prism', vi: 'Cạnh đáy; chiều sâu đáy; chiều cao (cm)', en: 'Base; depth; height (cm)', initial: '5; 3,5; 4' },
+      }),
+      T('spBox', 'Hình hộp ABCD.A′B′C′D′', 'Box ABCD.A′B′C′D′', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập kích thước (bằng nhau: hình lập phương).', 'Click where A goes, then the sizes (all equal: a cube).', {
+        ask: { key: 'box', vi: 'Dài; rộng; cao (cm)', en: 'Length; width; height (cm)', initial: '5; 4; 4' },
+      }),
+      T('spBoxPar', 'Hình hộp đáy hình bình hành', 'Parallelepiped', ['point'], 'Nhấp chỗ đặt đỉnh A rồi nhập kích thước.', 'Click where A goes, then the sizes.', {
+        ask: { key: 'box', vi: 'Cạnh AB; chiều sâu; chiều cao (cm)', en: 'Side AB; depth; height (cm)', initial: '5; 4; 4' },
+      }),
+      T('spMid', 'Trung điểm (không gian)', 'Midpoint (3D)', ['point3', 'point3'], 'Chọn hai điểm của hình không gian.', 'Select two points of the 3D figure.'),
+      T('spOn', 'Điểm chia đoạn theo tỉ số', 'Point dividing a segment', ['point3', 'point3'], 'Nhấp lên một cạnh để lấy ngay một điểm trên cạnh đó (kéo để dời). Hoặc chọn hai đầu A rồi B và nhập tỉ số AM : AB.', 'Click an edge for a point on it (drag to move it). Or select the ends A then B and type the ratio AM : AB.', {
+        ask: { key: 'ratio', vi: 'Tỉ số AM : AB', en: 'Ratio AM : AB', initial: '1/3' },
+      }),
+      T('spSeg', 'Nối hai điểm (không gian)', 'Join two points (3D)', ['point3', 'point3'], 'Chọn hai điểm. Phần bị khối che được vẽ nét đứt.', 'Select two points. Parts hidden by the solid are dashed.'),
+      T('spCentroid', 'Trọng tâm tam giác (không gian)', 'Centroid of a triangle (3D)', ['point3', 'point3', 'point3'], 'Chọn ba đỉnh của tam giác.', 'Select the three vertices.'),
+      T('spCross', 'Giao điểm hai đường thẳng', 'Meeting point of two lines', ['point3', 'point3', 'point3', 'point3'], 'Chọn hai điểm của đường thứ nhất rồi hai điểm của đường thứ hai (hai đường phải cùng nằm trong một mặt phẳng).', 'Select two points of the first line, then two of the second (both lines in one plane).'),
+      T('spLinePlane', 'Giao điểm của đường thẳng và mặt phẳng', 'Line meets plane', ['point3', 'point3', 'point3', 'point3', 'point3'], 'Chọn hai điểm của đường thẳng rồi ba điểm của mặt phẳng.', 'Select two points of the line, then three points of the plane.'),
+      T('spPlaneLine', 'Giao tuyến của hai mặt phẳng', 'Line where two planes meet', ['point3', 'point3', 'point3', 'point3', 'point3', 'point3'], 'Chọn ba điểm của mặt phẳng thứ nhất rồi ba điểm của mặt phẳng thứ hai.', 'Select three points of the first plane, then three of the second.'),
+      T('spSection', 'Thiết diện', 'Section', ['point3', 'point3', 'point3'], 'Chọn ba điểm của mặt phẳng cắt. Các đỉnh mới của thiết diện được đặt tên.', 'Select three points of the cutting plane. New corners of the section get names.'),
+      T('spParallel', 'Đường song song cắt một đường', 'Parallel meeting a line', ['point3', 'point3', 'point3', 'point3', 'point3'], 'Chọn điểm M, hai điểm A, B (kẻ song song với AB), rồi hai điểm của đường mà nó cắt.', 'Select M, then A and B (parallel to AB), then two points of the line it meets.'),
+      T('spFoot', 'Hình chiếu vuông góc lên mặt phẳng', 'Projection on a plane', ['point3', 'point3', 'point3', 'point3'], 'Chọn điểm rồi ba điểm của mặt phẳng.', 'Select the point, then three points of the plane.'),
+      T('spFootLine', 'Hình chiếu vuông góc lên đường thẳng', 'Projection on a line', ['point3', 'point3', 'point3'], 'Chọn điểm rồi hai điểm của đường thẳng.', 'Select the point, then two points of the line.'),
+    ],
+  },
+  {
     id: 'transform', vi: 'Biến hình', en: 'Transformations',
     tools: [
       T('reflectLine', 'Đối xứng trục', 'Reflect in line', ['object', 'straight'], 'Chọn hình rồi trục đối xứng.', 'Select the object, then the mirror line.'),
@@ -300,6 +356,8 @@ export function matches(pick: Pick, v: Value | null, def: Def): boolean {
   switch (pick) {
     case 'point':
       return v.k === 'point';
+    case 'point3':
+      return v.k === 'point' && !!v.p3;
     case 'straight':
       return v.k === 'straight';
     case 'vector':
@@ -348,6 +406,38 @@ export interface CreateContext {
   compass?: boolean;
 }
 
+/** "1/3", "0,5", "2 : 3" (as a fraction), "50%": a ratio, NaN when unreadable. */
+export function parseRatio(s: string | undefined): number {
+  const t = (s ?? '').trim().replace(/,/g, '.');
+  const f = /^(-?\d+(?:\.\d+)?)\s*[/:]\s*(\d+(?:\.\d+)?)$/.exec(t);
+  if (f) return Number(f[1]) / Number(f[2]);
+  const pc = /^(-?\d+(?:\.\d+)?)\s*%$/.exec(t);
+  if (pc) return Number(pc[1]) / 100;
+  return Number.parseFloat(t);
+}
+
+/** The plane through three points of the figure (their places in space), or null. */
+function threePlane(values: Values, ids: Id[]): Plane | null {
+  const ps = ids.map((id) => {
+    const v = values.get(id);
+    return v?.k === 'point' ? v.p3 : undefined;
+  });
+  return ps.every(Boolean) ? planeOf(...(ps as [Vec3, Vec3, Vec3])) : null;
+}
+
+/** The 3D solid the points lie on (or in): the one a section of it by their plane is about. */
+function solidThrough(c: Construction, values: Values | undefined, ids: Id[]): Id | null {
+  if (!values) return null;
+  const pts = ids.map((id) => values.get(id)).flatMap((v) => (v?.k === 'point' && v.p3 ? [v.p3] : []));
+  for (const o of c.objects) {
+    const v = values.get(o.id);
+    if (v?.k !== 'solid3') continue;
+    // on the surface or inside: no face has the point clearly outside
+    if (pts.every((p) => v.hull.faces.every((f) => f.n.x * p.x + f.n.y * p.y + f.n.z * p.z <= f.d + 1e-6)) || pts.some((p) => inside(p, v.hull))) return o.id;
+  }
+  return null;
+}
+
 /** Parses "3; 4; 5" or "3 4 5" / "3, 4, 5" into numbers ("2,5; 3": with semicolons a comma is a decimal mark). */
 export function parseNumbers(s: string | undefined): number[] {
   const text = (s ?? '').trim();
@@ -393,6 +483,11 @@ export function createFromTool(c: Construction, tool: ToolId, picked: Id[], answ
     return a?.k === 'point' && b?.k === 'point' ? Math.hypot(a.p.x - b.p.x, a.p.y - b.p.y) : 3;
   };
   const rightMark = (a: Id, v: Id, b: Id) => add('ang', { t: 'angle', a, b: v, c: b });
+  /** A point of the 3D figure (it has a place in space). */
+  const is3 = (id: Id | undefined) => {
+    const v = id ? ctx.values?.get(id) : null;
+    return v?.k === 'point' && !!v.p3;
+  };
   /** Small-letter names for the ends of rays (Ox, Oy…). */
   const lower = (prefer?: string) => {
     const n = prefer && !names.has(prefer) && !(prefer in labelsOf(c)) ? prefer : nextRayName(c, names);
@@ -433,6 +528,11 @@ export function createFromTool(c: Construction, tool: ToolId, picked: Id[], answ
       if (twoSolutions(byId, a, b)) point({ t: 'intersection', a, b, index: 1 });
       return result();
     case 'midpoint': {
+      // two points of a solid: the midpoint in space
+      if (is3(a) && is3(b)) {
+        point({ t: 'on3', a, b, k: 0.5 });
+        return result();
+      }
       const M = point({ t: 'midpoint', a, b });
       if (ctx.halves) {
         seg(a, M, { ticks: 1 });
@@ -448,7 +548,9 @@ export function createFromTool(c: Construction, tool: ToolId, picked: Id[], answ
     case 'segment':
     case 'line':
     case 'vector':
-      add(tool === 'segment' ? 's' : tool === 'vector' ? 'v' : 'l', { t: tool, a, b });
+      // joining two points of a solid: a segment in space (its hidden part dashed)
+      if (tool === 'segment' && is3(a) && is3(b)) add('s', { t: 'seg3', a, b });
+      else add(tool === 'segment' ? 's' : tool === 'vector' ? 'v' : 'l', { t: tool, a, b });
       return result();
     case 'oppositeRay': {
       const ray = byId.get(a);
@@ -742,6 +844,10 @@ export function createFromTool(c: Construction, tool: ToolId, picked: Id[], answ
       return result();
     }
     case 'centroid':
+      if (is3(a) && is3(b) && is3(picked[2])) {
+        point({ t: 'centroid3', pts: [a, b, picked[2]] });
+        return result();
+      }
       point({ t: 'center', kind: 'centroid', a, b, c: d }, { label: 'G' in labelsOf(c) ? undefined : 'G' });
       fixLabels(objs, c);
       return result();
@@ -1071,6 +1177,108 @@ export function createFromTool(c: Construction, tool: ToolId, picked: Id[], answ
       }
       return result();
     }
+    case 'spPyramid':
+    case 'spPyramidA':
+    case 'spPyramidPar':
+    case 'spPyramidTrap':
+    case 'spPyramid3':
+    case 'spPyramid3A':
+    case 'spPyramidReg':
+    case 'spTetra':
+    case 'spPrism':
+    case 'spBox':
+    case 'spBoxPar': {
+      const nums = parseNumbers(answer);
+      let spec: { kind: Solid3Kind; n: number; w: number; d: number; h: number; skew?: number; top?: number; apex?: 'center' | 'A' };
+      if (tool === 'spPyramidReg') {
+        const [n, w, h] = nums;
+        if (!(n >= 3 && n <= 8 && Number.isInteger(n))) throw new Error('Số cạnh đáy là số nguyên từ 3 đến 8.');
+        spec = { kind: 'pyramidReg', n, w, d: 0, h };
+      } else if (tool === 'spTetra') spec = { kind: 'tetra', n: 3, w: nums[0], d: 0, h: 0 };
+      else {
+        const [w, d, h] = nums;
+        const kind: Solid3Kind = tool === 'spPrism' ? 'prism' : tool === 'spBox' || tool === 'spBoxPar' ? 'box' : 'pyramid';
+        spec = { kind, n: tool === 'spPyramid3' || tool === 'spPyramid3A' || tool === 'spPrism' ? 3 : 4, w, d, h };
+        if (tool === 'spPyramidA' || tool === 'spPyramid3A') spec.apex = 'A';
+        if (tool === 'spPyramidPar' || tool === 'spBoxPar') spec.skew = Math.round(w * 0.3 * 100) / 100;
+        if (tool === 'spPyramidTrap') {
+          spec.skew = Math.round(w * 0.2 * 100) / 100;
+          spec.top = 0.5;
+        }
+      }
+      const sizes = [spec.w, ...(spec.kind === 'tetra' ? [] : [spec.h]), ...(spec.kind === 'pyramidReg' || spec.kind === 'tetra' ? [] : [spec.d])];
+      if (!sizes.every((x) => x > 0)) throw new Error('Các kích thước phải là số lớn hơn 0 (ví dụ 5; 4; 5).');
+      // the clicked point only places the solid: hidden, and its name goes to the vertex
+      const anchorName = isFresh(a) ? byId.get(a)?.style.label : undefined;
+      if (isFresh(a)) restyle.push({ id: a, style: { hidden: true, label: '', showLabel: false } });
+      const sid = add('sol', { t: 'solid3', ...spec, at: a });
+      solidNames(spec).forEach((n, i) => {
+        const free = (n === anchorName || !(n in labelsOf(c))) && !names.has(n);
+        const label = free ? n : name();
+        names.add(label);
+        add('p', { t: 'v3', solid: sid, i }, { label });
+      });
+      return result();
+    }
+    case 'spMid':
+      point({ t: 'on3', a, b, k: 0.5 });
+      return result();
+    case 'spOn': {
+      const k = parseRatio(answer);
+      // 0 and 1 are the ends themselves; beyond 1 (or below 0) the point is on the extension
+      if (!Number.isFinite(k) || k === 0 || k === 1) throw new Error('Tỉ số không hợp lệ (ví dụ 1/3, 0,5, 2/3).');
+      point({ t: 'on3', a, b, k });
+      return result();
+    }
+    case 'spSeg':
+      add('s', { t: 'seg3', a, b });
+      return result();
+    case 'spCentroid':
+      point({ t: 'centroid3', pts: [a, b, picked[2]] });
+      return result();
+    case 'spCross':
+      point({ t: 'cross3', a, b, c: picked[2], d: picked[3] });
+      return result();
+    case 'spLinePlane':
+      point({ t: 'linePlane3', a, b, p: picked[2], q: picked[3], r: picked[4] });
+      return result();
+    case 'spPlaneLine':
+      add('s', { t: 'planeLine3', a, b, c: picked[2], d: picked[3], e: picked[4], f: picked[5] });
+      return result();
+    case 'spSection': {
+      const sol = solidThrough(c, ctx.values, [a, b, picked[2]]);
+      if (!sol) throw new Error('Ba điểm này không nằm trên một khối nào.');
+      const sec = add('sec', { t: 'section3', solid: sol, a, b, c: picked[2] });
+      // corners that are not already points of the figure get names
+      const vals = ctx.values;
+      const plane = vals ? threePlane(vals, [a, b, picked[2]]) : null;
+      const hull = vals?.get(sol);
+      if (plane && hull?.k === 'solid3') {
+        const corners = section(hull.hull, plane);
+        const known = [...(vals?.values() ?? [])].flatMap((v) => (v?.k === 'point' && v.p3 ? [v.p3] : []));
+        corners.forEach((q, i) => {
+          if (!known.some((k) => dist3(k, q) < 1e-6)) point({ t: 'secV3', section: sec, i });
+        });
+      }
+      return result();
+    }
+    case 'spParallel': {
+      // through M, parallel to AB, to where it meets line CD
+      const helperPt = helper('p', { t: 'shift3', p: a, a: b, b: picked[2] });
+      const N = point({ t: 'cross3', a, b: helperPt, c: picked[3], d: picked[4] });
+      add('s', { t: 'seg3', a, b: N });
+      return result();
+    }
+    case 'spFoot': {
+      const H = point({ t: 'foot3', p: a, a: b, b: picked[2], c: picked[3] });
+      add('s', { t: 'seg3', a, b: H });
+      return result();
+    }
+    case 'spFootLine': {
+      const H = point({ t: 'foot3', p: a, a: b, b: picked[2] });
+      add('s', { t: 'seg3', a, b: H });
+      return result();
+    }
     case 'function':
       add('f', { t: 'function', expr: answer ?? 'x' }, { label: `y = ${answer ?? 'x'}`, showLabel: false });
       return result();
@@ -1151,4 +1359,49 @@ export function deleteWithDependents(c: Construction, id: Id, dependencies: (def
   const gone = new Set([id]);
   for (const o of c.objects) if (dependencies(o.def).some((d) => gone.has(d))) gone.add(o.id);
   return { ...c, objects: c.objects.filter((o) => !gone.has(o.id)) };
+}
+
+/* ------------------------------ solid geometry ------------------------------ */
+
+/**
+ * A point of the 3D figure for a click at `p`: the 3D point there, or a new point on the
+ * edge or 3D segment there (a parallel projection keeps ratios along a line, so the ratio
+ * on the page is the ratio in space). Null when the click is on neither.
+ */
+export function pick3At(c: Construction, values: Values, p: Vec, tol: number): { con: Construction; id: Id } | null {
+  let best: { id: Id; d: number } | null = null;
+  for (const o of c.objects) {
+    const v = values.get(o.id);
+    if (v?.k !== 'point' || !v.p3 || o.style.hidden) continue;
+    const d = dist(v.p, p);
+    if (d < tol * 1.2 && (!best || d < best.d)) best = { id: o.id, d };
+  }
+  if (best) return { con: c, id: best.id };
+  // ends (object ids) of the edges and 3D segments near the click
+  let edge: { a: Id; b: Id; k: number; d: number } | null = null;
+  const consider = (a: Id | undefined, b: Id | undefined) => {
+    const va = a ? values.get(a) : null;
+    const vb = b ? values.get(b) : null;
+    if (!a || !b || va?.k !== 'point' || vb?.k !== 'point') return;
+    const ab = sub(vb.p, va.p);
+    const L2 = dot(ab, ab);
+    if (L2 < 1e-12) return;
+    const k = dot(sub(p, va.p), ab) / L2;
+    if (k < 0.02 || k > 0.98) return;
+    const q = { x: va.p.x + ab.x * k, y: va.p.y + ab.y * k };
+    const d = dist(q, p);
+    if (d < tol && (!edge || d < edge.d)) edge = { a, b, k: Math.round(k * 1000) / 1000, d };
+  };
+  for (const o of c.objects) {
+    const v = values.get(o.id);
+    if (o.style.hidden || !v) continue;
+    if (v.k === 'solid3' && o.def.t === 'solid3') {
+      const vertex = (i: number) => c.objects.find((x) => x.def.t === 'v3' && x.def.solid === o.id && x.def.i === i)?.id;
+      for (const [i, j] of v.hull.edges) consider(vertex(i), vertex(j));
+    } else if (o.def.t === 'seg3') consider(o.def.a, o.def.b);
+  }
+  if (!edge) return null;
+  const e = edge as { a: Id; b: Id; k: number };
+  const id = nextId(c, 'p');
+  return { con: { ...c, objects: [...c.objects, { id, def: { t: 'on3', a: e.a, b: e.b, k: e.k }, style: { label: nextPointName(c) } }] }, id };
 }

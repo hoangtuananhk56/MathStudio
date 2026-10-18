@@ -15,6 +15,7 @@ import { loadSettings, saveSettings, type Lang } from '../shared/settings';
 import { ToolIcon } from './icons';
 import { GRADES, familyOf, isPrimary, stepCount, stepText, toolsForGrade, type Grade } from '../geometry/grades';
 import { SMART_TOOLS, angleAtClick, smartPicks } from '../geometry/smart';
+import { pick3At } from '../geometry/tools';
 import { AskDialog } from './AskDialog';
 import { LibraryDialog } from './LibraryDialog';
 import { normalize } from '../geometry/fromText';
@@ -103,6 +104,9 @@ const TX = {
   ruler: { vi: 'Thước kẻ', en: 'Ruler' },
   library: { vi: 'Hình mẫu & đề bài', en: 'Templates & exercises' },
   fromPicture: { vi: 'Từ ảnh', en: 'From picture' },
+  turn: { vi: 'Xoay hình', en: 'Turn' },
+  turnTip: { vi: 'Xoay hình không gian quanh trục đứng để nhìn từ phía khác; nét khuất được vẽ lại.', en: 'Turn the solid about a vertical axis to see it from another side; hidden lines are redrawn.' },
+  turnReset: { vi: 'Như SGK', en: 'Textbook view' },
   fromPictureTip: { vi: 'Dựng lại hình từ ảnh hình vẽ (ảnh chụp, ảnh quét, ảnh trong tài liệu), hoặc đọc đề bài trong ảnh rồi vẽ', en: 'Rebuild a figure from a picture of it, or read an exercise from a picture and draw it' },
   useFigure: { vi: 'Đưa vào hình vẽ', en: 'Add to the drawing' },
   drawExercise: { vi: 'Vẽ hình theo đề này', en: 'Draw this exercise' },
@@ -176,6 +180,8 @@ export function GeometryApp({ init, send }: Props) {
   const simple = primary;
   const t = (k: keyof typeof TX) => TX[k][lang];
   const hist = useHistory(init.construction ?? { ...emptyConstruction(), grid: primary });
+  /** Turn of the 3D scene when the turn slider was grabbed. */
+  const yawStart = useRef<number | undefined>(undefined);
   const c = hist.c;
   const values = useMemo(() => computeAll(c), [c]);
 
@@ -614,7 +620,7 @@ export function GeometryApp({ init, send }: Props) {
         // Move the whole selection.
         const free = freeAncestors(c, selIds);
         drag.current = { kind: 'move', start: p, cam0: cam, moved: false, from: positionsOf(c, free) };
-      } else if (o.def.t === 'point' || o.def.t === 'pointOn' || o.def.t === 'pointPolar') {
+      } else if (o.def.t === 'point' || o.def.t === 'pointOn' || o.def.t === 'pointPolar' || o.def.t === 'on3') {
         drag.current = { kind: 'point', id: o.id, start: p, cam0: cam, moved: false };
       } else if (o.def.t === 'text') {
         drag.current = { kind: 'text', id: o.id, start: p, cam0: cam, moved: false };
@@ -701,6 +707,23 @@ export function GeometryApp({ init, send }: Props) {
         hist.commit(con);
         // made by this click in empty space (not on a line or at an intersection)
         if (con.objects[con.objects.length - 1]?.def.t === 'point') setFresh((f) => [...f, r.id]);
+      }
+    } else if (need === 'point3') {
+      const r = pick3At(con, values, p, TOL / cam.scale);
+      if (!r) {
+        setToast(stepText(def.id, picks.length, lang));
+        return;
+      }
+      con = r.con;
+      id = r.id;
+      if (con !== c) {
+        hist.commit(con);
+        // "point on a segment": a click on the edge itself already is the point
+        if (def.id === 'spOn' && !picks.length) {
+          resetPicks();
+          selectOnly([id]);
+          return;
+        }
       }
     } else {
       id = hitTest(p, (o) => matches(need, values.get(o.id) ?? null, o.def));
@@ -795,6 +818,20 @@ export function GeometryApp({ init, send }: Props) {
             if (o.def.t === 'pointOn') {
               const host2 = values.get(o.def.on);
               return host2 ? { ...o, def: { ...o.def, param: paramOn(host2, p) } } : o;
+            }
+            if (o.def.t === 'on3') {
+              // along its segment (the ratio on the page is the ratio in space)
+              const va = values.get(o.def.a);
+              const vb = values.get(o.def.b);
+              if (va?.k !== 'point' || vb?.k !== 'point') return o;
+              const ab = { x: vb.p.x - va.p.x, y: vb.p.y - va.p.y };
+              const L2 = ab.x * ab.x + ab.y * ab.y;
+              if (L2 < 1e-12) return o;
+              let k = ((p.x - va.p.x) * ab.x + (p.y - va.p.y) * ab.y) / L2;
+              // shift: simple ratios (quarters, thirds); halves are easy to land on
+              const nice = [0.25, 1 / 3, 0.5, 2 / 3, 0.75].find((r) => Math.abs(r - k) < (e.shiftKey ? 0.09 : 0.02));
+              if (nice !== undefined) k = nice;
+              return { ...o, def: { ...o.def, k: Math.round(Math.max(-1, Math.min(2, k)) * 1000) / 1000 } };
             }
             return o;
           }),
@@ -1237,6 +1274,28 @@ export function GeometryApp({ init, send }: Props) {
         <div className="geo-top-actions">
           <button className="btn btn-tonal geo-lib-btn" onClick={() => setLibraryOpen(true)}>{t('library')}</button>
           <button className="btn btn-tonal geo-lib-btn" onClick={() => setOcr({ image: null })} title={t('fromPictureTip')}>{t('fromPicture')}</button>
+          {c.objects.some((o) => o.def.t === 'solid3') && (
+            <label className="geo-check geo-yaw" title={t('turnTip')}>
+              {t('turn')}
+              <input
+                type="range"
+                min={-180}
+                max={180}
+                step={5}
+                value={c.yaw3 ?? 0}
+                onPointerDown={() => (yawStart.current = c.yaw3)}
+                onChange={(e) => hist.replace((x) => ({ ...x, yaw3: Number(e.target.value) || undefined }))}
+                onPointerUp={() => {
+                  // one undo step for the whole turn
+                  const end = hist.snapshot();
+                  if (end.yaw3 === yawStart.current) return;
+                  hist.replace((x) => ({ ...x, yaw3: yawStart.current }));
+                  hist.commit(end);
+                }}
+              />
+              <button className="icon-btn" onClick={() => hist.commit((x) => ({ ...x, yaw3: undefined }))} disabled={!c.yaw3}>{t('turnReset')}</button>
+            </label>
+          )}
           <label className="geo-check geo-select geo-grade">
             {t('grade')}
             <select
@@ -1919,5 +1978,34 @@ function describe(o: GeoObject, c: Construction, lang: Lang): string {
       return `“${d.text}”`;
     case 'function':
       return `y = ${d.expr}`;
+    case 'solid3': {
+      const names: Record<string, [string, string]> = {
+        pyramid: ['Hình chóp', 'Pyramid'], prism: ['Hình lăng trụ', 'Prism'], box: ['Hình hộp', 'Box'],
+        pyramidReg: ['Hình chóp đều', 'Regular pyramid'], prismReg: ['Lăng trụ đều', 'Regular prism'], tetra: ['Tứ diện đều', 'Regular tetrahedron'],
+      };
+      return `${names[d.kind][vi ? 0 : 1]} (${vi ? 'không gian' : '3D'})`;
+    }
+    case 'v3':
+      return own || o.id;
+    case 'on3':
+      return Math.abs(d.k - 0.5) < 1e-9 ? `${own}: ${vi ? 'trung điểm' : 'midpoint'} ${name(d.a)}${name(d.b)}` : `${own} ∈ ${name(d.a)}${name(d.b)}`;
+    case 'centroid3':
+      return `${own}: ${vi ? 'tâm' : 'centre'} ${d.pts.map(name).join('')}`;
+    case 'cross3':
+      return `${own} = ${name(d.a)}${name(d.b)} ∩ ${name(d.c)}${name(d.d)}`;
+    case 'linePlane3':
+      return `${own} = ${name(d.a)}${name(d.b)} ∩ (${name(d.p)}${name(d.q)}${name(d.r)})`;
+    case 'foot3':
+      return `${own}: ${vi ? 'hình chiếu của' : 'projection of'} ${name(d.p)} ${vi ? 'lên' : 'on'} ${d.c ? `(${name(d.a)}${name(d.b)}${name(d.c)})` : `${name(d.a)}${name(d.b)}`}`;
+    case 'shift3':
+      return `${own}: ${name(d.p)} + ${name(d.a)}${name(d.b)}`;
+    case 'seg3':
+      return `${vi ? 'Đoạn' : 'Segment'} ${name(d.a)}${name(d.b)}`;
+    case 'planeLine3':
+      return `(${name(d.a)}${name(d.b)}${name(d.c)}) ∩ (${name(d.d)}${name(d.e)}${name(d.f)})`;
+    case 'section3':
+      return `${vi ? 'Thiết diện' : 'Section'} (${name(d.a)}${name(d.b)}${name(d.c)})`;
+    case 'secV3':
+      return own || o.id;
   }
 }

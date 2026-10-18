@@ -261,6 +261,16 @@ export function drawingBounds(c: Construction, values: Values): Viewport | null 
         });
         v.circles.forEach((ci) => grow(ci.c, ci.r));
         break;
+      case 'solid3':
+        v.verts.forEach((q) => grow(q));
+        break;
+      case 'seg3':
+        grow(v.a);
+        grow(v.b);
+        break;
+      case 'section3':
+        v.pts.forEach((q) => grow(q));
+        break;
       default:
         break;
     }
@@ -782,6 +792,29 @@ export function renderConstruction(c: Construction, values: Values, opts: Render
           out.push(`<circle cx="${fmt(X(ci.c))}" cy="${fmt(Y(ci.c))}" r="${fmt(ci.r * scale)}" stroke="${ink}" stroke-width="${fmt(width)}" fill="none"/>`);
           all.push(`M${fmt(X(ci.c) - ci.r * scale)} ${fmt(Y(ci.c))}a${fmt(ci.r * scale)} ${fmt(ci.r * scale)} 0 1 0 ${fmt(2 * ci.r * scale)} 0a${fmt(ci.r * scale)} ${fmt(ci.r * scale)} 0 1 0 ${fmt(-2 * ci.r * scale)} 0`);
         }
+        if (highlight || cand) out.push(halo(all.join('')));
+        break;
+      }
+      case 'solid3':
+      case 'seg3':
+      case 'section3': {
+        // solid geometry: seen parts solid, hidden parts dashed (a dashed style dashes it all)
+        const dash = ' stroke-dasharray="5 4"';
+        const ink = ghost ? '#1a73e8' : color;
+        const all: string[] = [];
+        const line = (pc: { a: Vec; b: Vec; hidden: boolean }) => {
+          const d = `M${fmt(X(pc.a))} ${fmt(Y(pc.a))}L${fmt(X(pc.b))} ${fmt(Y(pc.b))}`;
+          all.push(d);
+          out.push(`<path d="${d}" stroke="${ink}" stroke-width="${fmt(width)}"${pc.hidden || s.dash === 'dashed' ? dash : ''} stroke-linecap="round" fill="none"/>`);
+        };
+        if (v.k === 'section3') {
+          // the section, lightly coloured, under its sides
+          const fillCol = s.fill && s.fill !== 'none' ? s.fill : '#bcd4f6';
+          const d = v.pts.map((q, i) => `${i ? 'L' : 'M'}${fmt(X(q))} ${fmt(Y(q))}`).join('') + 'Z';
+          out.push(`<path d="${d}" fill="${greyed ? '#e6e9ed' : fillCol}" fill-opacity="${fmt(s.fillOpacity ?? 0.45)}" stroke="none"/>`);
+          v.pieces.forEach(line);
+        } else if (v.k === 'seg3') v.pieces.forEach(line);
+        else v.edges.forEach((pcs) => pcs.forEach(line));
         if (highlight || cand) out.push(halo(all.join('')));
         break;
       }

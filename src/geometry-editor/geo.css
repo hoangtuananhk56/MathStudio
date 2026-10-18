@@ -1136,3 +1136,10 @@
   color: var(--on-tonal);
   font-weight: 600;
 }
+
+/* turning a 3D figure */
+.geo-yaw input[type='range'] {
+  width: 110px;
+  margin: 0 4px;
+  accent-color: var(--primary);
+}

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { computeAll } from '../src/geometry/engine';
 import { emptyConstruction, type Construction, type Def } from '../src/geometry/model';
-import { decodeConstructionFromSvg, renderConstruction } from '../src/geometry/render';
+import { readFileSync } from 'node:fs';
+import { decodeConstructionFromOoxml, decodeConstructionFromSvg, renderConstruction } from '../src/geometry/render';
 
 function triangle(): Construction {
   const c = emptyConstruction();
@@ -37,6 +38,24 @@ describe('geometry renderer', () => {
     const c = triangle();
     const fig = renderConstruction(c, computeAll(c), { mode: 'export', view: c.view, scale: 1 });
     expect(decodeConstructionFromSvg(fig.svg)).toEqual(c);
+  });
+
+  it('reads the figure back from the OOXML Word returns (SVG as base64 or as XML)', () => {
+    const c = triangle();
+    const svg = renderConstruction(c, computeAll(c), { mode: 'export', view: c.view, scale: 1 }).svg;
+    const part = (body: string) =>
+      `<pkg:package><pkg:part pkg:name="/word/media/image1.png" pkg:contentType="image/png"><pkg:binaryData>iVBO</pkg:binaryData></pkg:part>` +
+      `<pkg:part pkg:name="/word/media/image2.svg" pkg:contentType="image/svg+xml" pkg:compression="store">${body}</pkg:part></pkg:package>`;
+    const b64 = Buffer.from(svg, 'utf8').toString('base64').replace(/(.{76})/g, '$1\n');
+    expect(decodeConstructionFromOoxml(part(`<pkg:binaryData>${b64}</pkg:binaryData>`))).toEqual(c);
+    // what Word gives back once it has saved the document
+    expect(decodeConstructionFromOoxml(part(`<pkg:xmlData pkg:originalXmlStandalone="no">${svg}</pkg:xmlData>`))).toEqual(c);
+    expect(decodeConstructionFromOoxml(part('<pkg:binaryData>AAAA</pkg:binaryData>'))).toBeNull();
+  });
+
+  it.skipIf(!process.env.FIGURE_OOXML)('reads a figure from OOXML produced by Word', () => {
+    const c = decodeConstructionFromOoxml(readFileSync(process.env.FIGURE_OOXML!, 'utf8'));
+    expect(c?.objects.length).toBeGreaterThan(0);
   });
 
   it('draws textbook marks: right angle square, equal ticks, vector arrow, dashes, labels', () => {

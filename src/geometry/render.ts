@@ -885,12 +885,36 @@ export function encodeConstruction(c: Construction): string {
   return toBase64(JSON.stringify(c));
 }
 
+/**
+ * The construction of a figure from the OOXML Word gives back for it. Word returns the SVG
+ * part either as base64 (<pkg:binaryData>) or, once it has saved the document, as XML
+ * (<pkg:xmlData><svg …>), so both are read.
+ */
+export function decodeConstructionFromOoxml(ooxml: string): Construction | null {
+  for (const part of ooxml.matchAll(/<pkg:part\b[^>]*pkg:contentType="image\/svg\+xml"[^>]*>([\s\S]*?)<\/pkg:part>/g)) {
+    const body = part[1];
+    let svg: string | null = null;
+    const xml = /<svg\b[\s\S]*<\/svg>/.exec(body);
+    if (xml) svg = xml[0];
+    else {
+      const b64 = /<pkg:binaryData>([A-Za-z0-9+/=\s]+)<\/pkg:binaryData>/.exec(body)?.[1];
+      if (b64) {
+        const bin = atob(b64.replace(/\s+/g, ''));
+        svg = new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0)));
+      }
+    }
+    const c = svg ? decodeConstructionFromSvg(svg) : null;
+    if (c) return c;
+  }
+  return null;
+}
+
 /** Reads the construction embedded in an exported figure's SVG, or null. */
 export function decodeConstructionFromSvg(svg: string): Construction | null {
-  const m = /<metadata id="mathstudio-geometry">([A-Za-z0-9+/=]+)<\/metadata>/.exec(svg);
+  const m = /<metadata id="mathstudio-geometry">\s*([A-Za-z0-9+/=\s]+?)\s*<\/metadata>/.exec(svg);
   if (!m) return null;
   try {
-    const c = JSON.parse(fromBase64(m[1])) as Construction;
+    const c = JSON.parse(fromBase64(m[1].replace(/\s+/g, ''))) as Construction;
     return c && c.version === 1 && Array.isArray(c.objects) ? c : null;
   } catch {
     return null;

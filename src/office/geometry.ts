@@ -3,7 +3,7 @@ import { buildPicturePackage, captionParagraph, figureRun } from '../core/image-
 import { wrapInContentControl } from '../core/ooxml';
 import { computeAll } from '../geometry/engine';
 import type { Construction } from '../geometry/model';
-import { decodeConstructionFromSvg, PX_PER_CM, renderConstruction } from '../geometry/render';
+import { decodeConstructionFromOoxml, PX_PER_CM, renderConstruction } from '../geometry/render';
 import { encodeGeometryInit, type GeometryInit, type GeometryMessage } from '../shared/protocol';
 import { rasterizeSvg } from './rasterize';
 import { flatOpcText } from '../geometry/exerciseText';
@@ -30,26 +30,22 @@ async function buildFigurePackage(c: Construction, captionNumber?: number): Prom
   return buildPicturePackage(wrapInContentControl(run, GEOMETRY_TAG), captionNumber ? 'display' : 'inline', { svg: fig.svg, pngBase64: png }, after);
 }
 
-/** The figure at the cursor (its construction), or null. */
-async function readSelectedFigure(): Promise<Construction | null> {
+/** The figure at the cursor: 'none', or its construction (null when it cannot be read). */
+async function readSelectedFigure(): Promise<Construction | null | 'none'> {
   try {
     return await Word.run(async (ctx) => {
       const cc = ctx.document.getSelection().parentContentControlOrNullObject;
       cc.load('tag');
       await ctx.sync();
-      if (cc.isNullObject || !isGeometryTag(cc.tag)) return null;
+      if (cc.isNullObject || !isGeometryTag(cc.tag)) return 'none';
       const ooxml = cc.getOoxml();
       await ctx.sync();
-      // The SVG part travels inside the OOXML package as base64 binary data.
-      const m = /pkg:contentType="image\/svg\+xml"[^>]*>\s*<pkg:binaryData>([A-Za-z0-9+/=\s]+)<\/pkg:binaryData>/.exec(ooxml.value);
-      if (!m) return null;
-      const bin = atob(m[1].replace(/\s+/g, ''));
-      const svg = new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0)));
-      return decodeConstructionFromSvg(svg);
+      // the construction travels inside the SVG picture (base64 or, once saved by Word, XML)
+      return decodeConstructionFromOoxml(ooxml.value);
     });
   } catch (e) {
     console.warn('MathStudio: could not read the figure', e);
-    return null;
+    return 'none';
   }
 }
 
@@ -137,9 +133,15 @@ function showGeometryDialog(init: GeometryInit): Promise<GeometryMessage> {
 
 /** Opens the geometry editor on the selected figure, or for a new one; inserts the result. */
 export async function runGeometryEditor(): Promise<void> {
-  const existing = await readSelectedFigure();
-  const exercise = existing ? '' : await readSelectedExercise();
-  let init: GeometryInit = existing ? { construction: existing, mode: 'edit' } : { mode: 'insert', ...(exercise ? { exercise } : {}) };
+  const found = await readSelectedFigure();
+  const existing = found === 'none' ? null : found;
+  const exercise = found === 'none' ? await readSelectedExercise() : '';
+  let init: GeometryInit = existing
+    ? { construction: existing, mode: 'edit' }
+    : found === null
+      ? // a MathStudio figure whose data was lost (e.g. the picture was replaced): say so, keep editing possible
+        { mode: 'edit', error: 'Không đọc được dữ liệu của hình này (có thể ảnh đã bị thay hoặc chỉnh trong Word). Bạn có thể vẽ lại; bấm Cập nhật sẽ thay hình cũ.' }
+      : { mode: 'insert', ...(exercise ? { exercise } : {}) };
   for (;;) {
     const msg = await showGeometryDialog(init);
     if (msg.type !== 'insertGeometry') return;

@@ -1,5 +1,6 @@
 /** Messages exchanged between the ribbon/taskpane runtime and the editor dialog. */
 import type { Layout, RenderKind } from '../core/ooxml';
+import type { Construction } from '../geometry/model';
 
 export interface EditorInit {
   latex: string;
@@ -38,4 +39,26 @@ export function decodeInit(s: string | null): EditorInit | null {
   } catch {
     return null;
   }
+}
+
+/* ------------------------------ geometry dialog ----------------------------- */
+
+
+export interface GeometryInit {
+  /** Figure being edited; undefined for a new figure. */
+  construction?: Construction;
+  mode: 'insert' | 'edit';
+  error?: string;
+  /** Text of an exercise selected in the document: opens "type the exercise" with it. */
+  exercise?: string;
+}
+
+export type GeometryMessage = { type: 'insertGeometry'; construction: Construction } | { type: 'cancel' };
+
+export function encodeGeometryInit(init: GeometryInit): string {
+  return encodeInit(init as unknown as EditorInit);
+}
+
+export function decodeGeometryInit(s: string | null): GeometryInit | null {
+  return decodeInit(s) as unknown as GeometryInit | null;
 }

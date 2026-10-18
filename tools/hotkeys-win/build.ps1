@@ -1,8 +1,11 @@
 # Builds MathStudioHotkeys.exe with the C# compiler that ships with Windows (.NET Framework 4.x),
 # so no SDK is needed. Output: dist-tools/MathStudioHotkeys.exe (+ mathstudio.ico)
+# A running copy is stopped first so the new build can replace it.
+param([string]$OutDir)
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-$out = Join-Path $root 'dist-tools'
+$out = if ($OutDir) { $OutDir } else { Join-Path $root 'dist-tools' }
+if (-not $OutDir) { Get-Process MathStudioHotkeys -ErrorAction SilentlyContinue | Stop-Process -Force }
 New-Item -ItemType Directory -Force $out | Out-Null
 
 $fw = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319'

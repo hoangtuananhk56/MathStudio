@@ -53,17 +53,29 @@ export function pictureRun(p: PictureData, style: PictureStyle, rels: PictureRel
   const cy = Math.max(1, Math.round((p.height + p.depth) * style.fontPt * EMU_PER_PT));
   // w:position is in half-points; negative lowers the run so the math baseline matches the text.
   const lower = Math.round(p.depth * style.fontPt * 2);
+  return drawingRun(cx, cy, lower, style.alt, 'MathStudio Equation', rels);
+}
+
+const EMU_PER_CM = 360000;
+
+/** An inline picture of a given size in centimetres (geometry figures). */
+export function figureRun(widthCm: number, heightCm: number, alt: string, rels: PictureRels = DEFAULT_RELS): string {
+  return drawingRun(Math.max(1, Math.round(widthCm * EMU_PER_CM)), Math.max(1, Math.round(heightCm * EMU_PER_CM)), 0, alt, 'MathStudio Figure', rels);
+}
+
+/** The <w:r><w:drawing> for an inline SVG picture (with PNG fallback). */
+function drawingRun(cx: number, cy: number, lowerHalfPts: number, altText: string, name: string, rels: PictureRels): string {
   const id = 1 + Math.floor(Math.random() * 0x7ffffff0);
-  const alt = escapeXml(style.alt);
+  const alt = escapeXml(altText);
   return (
-    `<w:r><w:rPr>${lower ? `<w:position w:val="${-lower}"/>` : ''}</w:rPr><w:drawing>` +
+    `<w:r><w:rPr>${lowerHalfPts ? `<w:position w:val="${-lowerHalfPts}"/>` : ''}</w:rPr><w:drawing>` +
     '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
     `<wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/>` +
-    `<wp:docPr id="${id}" name="MathStudio Equation ${id}" descr="${alt}"/>` +
+    `<wp:docPr id="${id}" name="${name} ${id}" descr="${alt}"/>` +
     '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
     '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
     '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
-    `<pic:nvPicPr><pic:cNvPr id="0" name="equation.svg" descr="${alt}"/><pic:cNvPicPr/></pic:nvPicPr>` +
+    `<pic:nvPicPr><pic:cNvPr id="0" name="mathstudio.svg" descr="${alt}"/><pic:cNvPicPr/></pic:nvPicPr>` +
     `<pic:blipFill><a:blip r:embed="${rels.png}"><a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}">` +
     `<asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="${rels.svg}"/></a:ext></a:extLst></a:blip><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
     `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
@@ -95,7 +107,14 @@ export function pictureLayout(p: PictureData, style: PictureStyle, layout: Layou
 }
 
 /** A complete Flat-OPC package containing one paragraph with the picture and its media parts. */
-export function buildPicturePackage(paragraphContent: string, layout: Layout, p: PictureData): string {
+/** A centred caption paragraph "Hình n" with a SEQ field, so Word renumbers figures. */
+export function captionParagraph(n: number, word = 'Hình'): string {
+  const r = (t: string) => `<w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">${t}</w:t></w:r>`;
+  return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${r(`${word} `)}<w:fldSimple w:instr=" SEQ ${word} \\* ARABIC ">${r(String(n))}</w:fldSimple></w:p>`;
+}
+
+/** Flat-OPC package with the picture paragraph and, optionally, more paragraphs after it (a caption). */
+export function buildPicturePackage(paragraphContent: string, layout: Layout, p: Pick<PictureData, 'svg' | 'pngBase64'>, after = ''): string {
   const pPr = layout === 'display' ? '<w:pPr><w:jc w:val="center"/></w:pPr>' : layout === 'inline' ? '' : '<w:pPr><w:jc w:val="left"/></w:pPr>';
   const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   return (
@@ -118,7 +137,7 @@ export function buildPicturePackage(paragraphContent: string, layout: Layout, p:
     'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
     'xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" ' +
     'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml">' +
-    `<w:body><w:p>${pPr}${paragraphContent}</w:p></w:body></w:document>` +
+    `<w:body><w:p>${pPr}${paragraphContent}</w:p>${after}</w:body></w:document>` +
     '</pkg:xmlData></pkg:part>' +
     `<pkg:part pkg:name="/word/media/mathstudio.png" pkg:contentType="image/png" pkg:compression="store"><pkg:binaryData>${p.pngBase64}</pkg:binaryData></pkg:part>` +
     `<pkg:part pkg:name="/word/media/mathstudio.svg" pkg:contentType="image/svg+xml" pkg:compression="store"><pkg:binaryData>${utf8Base64(p.svg)}</pkg:binaryData></pkg:part>` +

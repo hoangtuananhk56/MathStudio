@@ -184,7 +184,7 @@ namespace MathStudio
             }
         }
 
-        /** True when Word's selection is inside a content control tagged by MathStudio ("mt2|…"). */
+        /** True when Word's selection is inside a content control tagged by MathStudio. */
         private static bool WordSelectionIsEquation()
         {
             object word = null;
@@ -202,7 +202,8 @@ namespace MathStudio
                         cc = ccs.GetType().InvokeMember("Item", System.Reflection.BindingFlags.InvokeMethod, null, ccs, new object[] { 1 });
                 }
                 string tag = cc == null ? null : Get(cc, "Tag") as string;
-                return tag != null && tag.StartsWith("mt2|", StringComparison.Ordinal);
+                // "mt2|…" = equation, "mt2g|…" = geometry figure; the Edit button handles both.
+                return tag != null && tag.StartsWith("mt2", StringComparison.Ordinal);
             }
             catch { return false; }
             finally

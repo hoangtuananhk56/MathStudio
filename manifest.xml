@@ -9,7 +9,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>10537b7b-a865-4f8a-a816-4dd0a9234015</Id>
-  <Version>1.3.0.0</Version>
+  <Version>1.4.0.0</Version>
   <ProviderName>MathStudio</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="MathStudio" />
@@ -183,6 +183,44 @@
                   </Action>
                 </Control>
               </Group>
+              <Group id="MathStudio.GeometryGroup">
+                <Label resid="Group.Geometry" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.Geometry.16" />
+                  <bt:Image size="32" resid="Icon.Geometry.32" />
+                  <bt:Image size="80" resid="Icon.Geometry.80" />
+                </Icon>
+                <Control xsi:type="Button" id="MathStudio.DrawFigure">
+                  <Label resid="DrawFigure.Label" />
+                  <Supertip>
+                    <Title resid="DrawFigure.Label" />
+                    <Description resid="DrawFigure.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Geometry.16" />
+                    <bt:Image size="32" resid="Icon.Geometry.32" />
+                    <bt:Image size="80" resid="Icon.Geometry.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>insertGeometry</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MathStudio.EditFigure">
+                  <Label resid="EditFigure.Label" />
+                  <Supertip>
+                    <Title resid="EditFigure.Label" />
+                    <Description resid="EditFigure.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.GeoEdit.16" />
+                    <bt:Image size="32" resid="Icon.GeoEdit.32" />
+                    <bt:Image size="80" resid="Icon.GeoEdit.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>editGeometry</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
               <Group id="MathStudio.ConvertGroup">
                 <Label resid="Group.Convert" />
                 <Icon>
@@ -273,6 +311,12 @@
         <bt:Image id="Icon.MathType.16" DefaultValue="https://localhost:3000/assets/mathtype-16.png" />
         <bt:Image id="Icon.MathType.32" DefaultValue="https://localhost:3000/assets/mathtype-32.png" />
         <bt:Image id="Icon.MathType.80" DefaultValue="https://localhost:3000/assets/mathtype-80.png" />
+        <bt:Image id="Icon.Geometry.16" DefaultValue="https://localhost:3000/assets/geometry-16.png" />
+        <bt:Image id="Icon.Geometry.32" DefaultValue="https://localhost:3000/assets/geometry-32.png" />
+        <bt:Image id="Icon.Geometry.80" DefaultValue="https://localhost:3000/assets/geometry-80.png" />
+        <bt:Image id="Icon.GeoEdit.16" DefaultValue="https://localhost:3000/assets/geoEdit-16.png" />
+        <bt:Image id="Icon.GeoEdit.32" DefaultValue="https://localhost:3000/assets/geoEdit-32.png" />
+        <bt:Image id="Icon.GeoEdit.80" DefaultValue="https://localhost:3000/assets/geoEdit-80.png" />
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands/index.html" />
@@ -325,6 +369,15 @@
         <bt:String id="MathType.Label" DefaultValue="MathType ⇄">
           <bt:Override Locale="vi-VN" Value="MathType ⇄" />
         </bt:String>
+        <bt:String id="Group.Geometry" DefaultValue="Geometry">
+          <bt:Override Locale="vi-VN" Value="Hình học" />
+        </bt:String>
+        <bt:String id="DrawFigure.Label" DefaultValue="Draw Figure">
+          <bt:Override Locale="vi-VN" Value="Vẽ hình" />
+        </bt:String>
+        <bt:String id="EditFigure.Label" DefaultValue="Edit Figure">
+          <bt:Override Locale="vi-VN" Value="Sửa hình" />
+        </bt:String>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Open the MathStudio tab to write your first equation.">
@@ -359,6 +412,12 @@
         </bt:String>
         <bt:String id="MathType.Tip" DefaultValue="Convert MathType equations in this document to MathStudio, or prepare MathStudio equations for MathType.">
           <bt:Override Locale="vi-VN" Value="Chuyển công thức MathType trong tài liệu sang MathStudio, hoặc chuẩn bị công thức MathStudio để chuyển sang MathType." />
+        </bt:String>
+        <bt:String id="DrawFigure.Tip" DefaultValue="Draw a geometry figure (points, lines, circles, polygons, angles, transformations) and insert it.">
+          <bt:Override Locale="vi-VN" Value="Vẽ hình học (điểm, đường thẳng, đường tròn, đa giác, góc, phép biến hình) rồi chèn vào tài liệu." />
+        </bt:String>
+        <bt:String id="EditFigure.Tip" DefaultValue="Put the cursor on a figure, then click to edit it (or double-click the figure).">
+          <bt:Override Locale="vi-VN" Value="Đặt con trỏ vào hình rồi bấm để sửa (hoặc nhấp đúp vào hình)." />
         </bt:String>
       </bt:LongStrings>
     </Resources>

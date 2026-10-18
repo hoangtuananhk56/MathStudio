@@ -62,6 +62,13 @@ const ICONS = {
     ${fraction(24, 21, 0.6, PURPLE)}
     <path d="M20 8h5a3 3 0 0 1 3 3M12 26H7a3 3 0 0 1-3-3" fill="none" stroke="${ORANGE}" stroke-width="2" stroke-linecap="round"/>
     <path d="M26 9.5l2 2.5 2-2.5M2 21.5l2-2.5 2 2.5" fill="none" stroke="${ORANGE}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`),
+  geometry: wrap(`
+    <path d="M4 26L16 5l12 21z" fill="#E8F5EC" stroke="#1e8449" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="16" cy="18" r="6" fill="none" stroke="${BLUE}" stroke-width="1.8"/>
+    <circle cx="4" cy="26" r="2.4" fill="#1e8449"/><circle cx="28" cy="26" r="2.4" fill="#1e8449"/><circle cx="16" cy="5" r="2.4" fill="#1e8449"/>`),
+  geoEdit: wrap(`
+    <path d="M3 27L12 9l9 18z" fill="#E8F5EC" stroke="#1e8449" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M28.5 8.5l-9.8 9.8-3.7 1 1-3.7 9.8-9.8a1.9 1.9 0 0 1 2.7 0 1.9 1.9 0 0 1 0 2.7z" fill="${ORANGE}"/>`),
   help: wrap(`
     <circle cx="16" cy="16" r="13" fill="none" stroke="${BLUE}" stroke-width="2.4"/>
     <path d="M12.2 12.4a3.9 3.9 0 0 1 7.6 1.1c0 2.6-3.8 3.1-3.8 5.6" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/>

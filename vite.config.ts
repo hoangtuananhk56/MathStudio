@@ -84,6 +84,7 @@ export default defineConfig(async ({ mode, command }) => {
           editor: resolve(import.meta.dirname, 'src/editor/index.html'),
           commands: resolve(import.meta.dirname, 'src/commands/index.html'),
           taskpane: resolve(import.meta.dirname, 'src/taskpane/index.html'),
+          geometry: resolve(import.meta.dirname, 'src/geometry-editor/index.html'),
         },
       },
     },

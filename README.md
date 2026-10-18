@@ -19,6 +19,69 @@ Chọn dạng mặc định trong hộp thoại (thanh trạng thái **Dạng**,
 
 **Nhấp đúp để sửa** (Windows): chạy `npm run hotkeys`. Chương trình ở khay hệ thống nhận ra cú nhấp đúp vào công thức MathStudio rồi mở trình soạn. Cách này dùng được cho cả hai dạng.
 
+## Hình học (giai đoạn 3: hình phẳng 2D)
+
+Nhóm **Hình học** trên Ribbon có hai nút: **Vẽ hình** và **Sửa hình**. Có thể nhấp đúp vào hình để sửa.
+
+- **Bộ máy dựng hình động** (`src/geometry/`), viết bằng TypeScript thuần và có test. Kéo một điểm thì mọi đối tượng phụ thuộc tự cập nhật. Các nhóm công cụ:
+  - điểm, điểm theo tọa độ, giao điểm, trung điểm, hình chiếu vuông góc
+  - đoạn thẳng, đoạn thẳng cho trước độ dài, đường thẳng, tia, vectơ
+  - vuông góc, song song, trung trực, phân giác, tiếp tuyến
+  - tam giác: thường, cân, vuông, vuông cân, đều, biết 3 cạnh (kiểm tra bất đẳng thức tam giác); đường cao, trung tuyến, phân giác trong, đường trung bình; trọng tâm G, trực tâm H, đường tròn ngoại tiếp (O) và nội tiếp (I). Kéo đỉnh thì hình vẫn giữ đúng tính chất (cân vẫn cân, vuông vẫn vuông) và tự có ký hiệu (gạch cạnh bằng nhau, ô vuông, cung phân giác).
+  - tứ giác: hình vuông, chữ nhật, bình hành, thoi, thang, thang cân, thang vuông; đa giác, đa giác đều
+  - đường tròn (tâm + điểm, tâm + bán kính, qua 3 điểm), cung, hình quạt
+  - góc: góc qua 3 điểm, góc giữa hai đường thẳng (lấy phía đã nhấp), góc cho trước số đo, góc lớn hơn 180°. Góc vuông tự vẽ ô vuông. Có 1–3 cung, gạch trên cung, tên α β γ φ, tô màu. Các góc chung đỉnh tự xếp bán kính để không đè nhau. Số đo hiển thị số nguyên (mặc định), độ-phút hoặc thập phân.
+  - ký hiệu bằng nhau (đoạn thẳng: gạch; góc: lần lượt 2–3 cung rồi gạch), số đo
+  - phép đối xứng trục, đối xứng tâm, quay, tịnh tiến, vị tự (ảnh tự đặt tên A′B′C′)
+  - chữ, đồ thị hàm số, hệ trục, lưới
+- **Vẽ đúng quy ước sách giáo khoa:**
+  - Đường thẳng và tia vẽ gọn, chỉ vượt qua điểm ngoài cùng một đoạn ngắn. Kéo ô vuông xanh ở hai đầu để cắt ngắn hoặc kéo dài, hoặc chọn "Kéo dài hết".
+  - Tia có gốc và ngọn: nhấp vào chỗ trống làm ngọn thì tia được ghi kiểu Ox (chữ thường, không chấm); góc vẽ mới tự đặt tên xOy, tia phân giác là Ot.
+  - Đường vuông góc tự có ô vuông; đường trung trực có ô vuông và gạch hai đoạn bằng nhau; tia phân giác đánh dấu hai góc bằng nhau.
+  - Chữ trên góc: số đo thật, hoặc tự ghi theo đề bài (ví dụ 60°) dù hình vẽ không đúng 60°. Chữ tự né đường đi qua đỉnh; góc lớn bao các góc nhỏ thì vẽ ra ngoài.
+  - Tam giác biết 2 cạnh và góc xen giữa (c.g.c), biết 1 cạnh và 2 góc kề (g.c.g) cho số đo chính xác.
+- **Di chuyển và chỉnh sửa:**
+  - Kéo điểm, đoạn thẳng, đường thẳng, đa giác, đường tròn để dời cả hình (hình mẫu vẫn giữ tính chất). Kéo tên điểm để đặt lại chỗ.
+  - Chọn nhiều: **kéo trên nền trống để khoanh vùng chọn** (như Word / PowerPoint), Shift+nhấp để thêm/bớt, Ctrl+A hoặc nút "Chọn hết". Các đối tượng đã chọn có khung nét đứt: **nắm vào bất kỳ chỗ nào trong khung để dời cả nhóm**; thanh phía trên khung để xoay ±15°, lật ngang/dọc, phóng to/thu nhỏ (giữ nguyên tính chất hình), nhân bản, đổi màu, xóa.
+  - Cuộn khung nhìn bằng bánh xe chuột (Shift: sang ngang), Space+kéo hoặc kéo chuột phải; Ctrl+bánh xe để phóng to.
+  - Phím mũi tên dịch nhẹ 0,1 cm (Shift: 1 cm). Ctrl+C / Ctrl+V sao chép – dán, Ctrl+D nhân bản; Delete xóa các đối tượng đã chọn.
+  - Khi kéo, giao điểm của đường thẳng và đường tròn không "nhảy" sang nghiệm kia.
+  - Phím tắt công cụ: V di chuyển, P điểm, S đoạn thẳng, L đường thẳng, R tia, T tam giác, N đa giác, O đường tròn, G ký hiệu góc, M trung điểm, I giao điểm, K vuông góc, H song song, E ký hiệu bằng nhau, Q số đo, A chữ, D xóa; Esc quay lại Di chuyển.
+  - Mở lại hình để sửa thì tự căn vừa khung.
+- **Trình bày:** tên điểm tự tránh đè nhau; tên có chỉ số A_1 → A₁, x^2 → x², A' → A′; kiểu điểm chấm đặc, chấm rỗng, dấu ×; hiện diện tích và chu vi của đa giác, hình tròn.
+- **Theo chương trình (đợt B):**
+  - **Chia phần và tô màu** (phân số lớp 2–5): hình chữ nhật, hình vuông chia cột × hàng, tam giác, hình tròn, đa giác đều chia phần bằng nhau; nhấp vào từng phần để tô / bỏ tô; hiện "3/4".
+  - **Dụng cụ ảo**: thước kẻ (cm, mm), ê-ke, thước đo góc hai thang số. Kéo để di chuyển, kéo ⟳ để xoay; thả gần một điểm thì bám vào điểm và khớp hướng đường thẳng. Chỉ hiện trong trình soạn, không chèn vào Word.
+  - **Đáy và chiều cao** (lớp 5): nhấp vào cạnh làm đáy; chân đường cao nằm ngoài thì tự kéo dài đáy nét đứt. **Hai đường chéo** (lớp 8) kèm giao điểm O và ký hiệu đúng loại hình. Chu vi, diện tích hình chữ nhật / hình vuông kèm cách tính.
+  - **Hình mẫu theo bài:** hai đường thẳng cắt nhau (đánh số 4 góc), hai đường song song và cát tuyến (góc tại A và B), góc ở tâm và góc nội tiếp, tiếp tuyến kèm bán kính và góc vuông, tia đối, ba đường cao / trung tuyến / phân giác cùng điểm đồng quy.
+  - **Đề / Đáp án:** đánh dấu nét thuộc đáp án; bản Đề bỏ các nét đó khi chèn vào Word.
+  - **Chú thích "Hình n"** dưới hình mới (trường SEQ của Word, tự đánh số lại).
+- **Nâng cao (đợt C):**
+  - **Hình mẫu & đề bài** (nút trên thanh trên):
+    - **Thư viện ~45 hình mẫu theo lớp 2–10**, có ảnh xem trước: đường gấp khúc, hình chữ nhật có kích thước, hình tròn (bán kính, đường kính), các loại góc, tam giác có đáy và chiều cao, hai tam giác bằng nhau, định lí Thales, tiếp tuyến, tứ giác nội tiếp, hệ thức lượng, hình khối, tổng vectơ, đồ thị, tangram…
+    - **Gõ đề ra hình** (offline): gõ hoặc dán đề, hình hiện ngay khi gõ. Từng câu được tô màu (xanh: đã hiểu, vàng: một phần, đỏ: chưa hiểu, xám: câu hỏi bỏ qua); bỏ chọn được từng câu; câu chưa hiểu có gợi ý ("Có phải ý bạn là: Đoạn thẳng BM?"), chọn gợi ý thì phần mềm có thể **ghi nhớ cách viết đó** cho lần sau. Phần chưa vẽ được chuyển thành danh sách **"Việc còn lại"** trong trình soạn, kèm nút mở đúng công cụ.
+      - Hiểu: tam giác (vuông / cân / đều, biết cạnh, góc, tỉ số, AB = AC, AB < AC), tứ giác đặc biệt và đa giác đều (cả đề thực tế lớp 6: chiều dài, chiều rộng, cạnh đáy, chiều cao, đường chéo, đáy lớn / nhỏ, diện tích, chu vi, đơn vị m, dm…); đoạn thẳng, tia Ox, góc xOy, hai tia đối nhau, đường thẳng d, ba điểm thẳng hàng; đường cao, trung tuyến, phân giác (cả dạng danh sách "các đường cao BD, CE cắt nhau tại H"); "M, N lần lượt là trung điểm…"; vuông góc / song song tại, cắt … tại; "trên tia đối của tia MA lấy D sao cho MD = MA", "lấy E thuộc BC sao cho BE = 2EC"; đối xứng; giao điểm; nối (nối BN, nối B với N, nối A với E, D với E, nối các điểm…); đường tròn (O; R), (O) đường kính AB, đường tròn đường kính BC cắt … tại, dây, tiếp tuyến tại / từ một điểm, cắt (O) tại điểm thứ hai; tọa độ Oxy, đồ thị; hình chóp, hình hộp, lăng trụ, trụ, nón, cầu (SA ⊥ đáy). Ký hiệu ∆ ⊥ // ∈ Â và cách gõ không dấu đều được.
+      - **Lấy đề từ Word:** bôi đen đề trong tài liệu rồi bấm **Vẽ hình** — đề (kể cả công thức MathType / Word) được đưa sẵn vào ô "Gõ đề bài"; hình chèn vào đoạn mới ngay sau đề.
+      - Bộ đo chất lượng: `tests/corpus/exercises.ts` (đề lớp 6–12, gồm các bài của một phiếu bài tập thật).
+  - **Hình khối 3D** theo cách vẽ SGK (chiều sâu 45°, cạnh khuất nét đứt): hình hộp chữ nhật, lập phương ABCD.A′B′C′D′, lăng trụ đứng tam giác, hình chóp tam giác / tứ giác S.ABCD, hình trụ, hình nón, hình cầu; kéo đỉnh A (hoặc tâm O) để dời hình.
+  - **Trục số**: từ, đến, khoảng cách vạch, các số đánh dấu.
+  - **Nét com-pa** (ô "Nét com-pa"): dựng tam giác biết 3 cạnh, đường trung trực, tia phân giác để lại các cung com-pa như dựng hình trên giấy.
+  - **Ghép hình tangram** 7 mảnh tô màu, kéo từng mảnh.
+- **Vẽ chính xác:** điểm tự gióng thẳng hàng với các điểm có sẵn (hiện đường gióng), bắt lưới 0,5. Giữ **Shift** khi vẽ để bắt góc 15° và độ dài chẵn 0,5 cm, kèm nhãn độ dài · góc cạnh con trỏ.
+- **Hai phong cách vẽ:**
+  - **SGK Việt Nam** (mặc định): nét đen, nhãn Times nghiêng tự đặt ra phía ngoài hình, số thập phân dùng dấu phẩy.
+  - **Quốc tế**: màu nhẹ, đa giác tô nền mờ.
+- **Chèn vào Word:** ảnh SVG kèm PNG dự phòng, kích thước theo cm thật (có thể đổi tỉ lệ). **Trạng thái hình được nhúng trong ảnh SVG**, nên copy hình sang tài liệu khác vẫn mở lại sửa được.
+- **Dễ dùng cho học sinh từ 7 tuổi:**
+  - Ô **"Dành cho: Lớp 2 … Lớp 10–12"** chỉ hiện công cụ của lớp đó (theo chương trình GDPT 2018). Lớp 2–5: nút to có chữ, lưới ô vuông bật sẵn, vùng chạm lớn hơn, bàn phím số to khi nhập số.
+  - **Chọn thông minh:** nhấp vào trong góc để ký hiệu góc hay vẽ tia phân giác; nhấp vào một cạnh để lấy trung điểm (tự gạch hai nửa bằng nhau) hay vẽ trung trực; nhấp vào gần một đỉnh tam giác để vẽ đường cao, trung tuyến, phân giác; nhấp vào trong tam giác để có trọng tâm, trực tâm, đường tròn nội tiếp, ngoại tiếp.
+  - **Kéo để vẽ:** nhấn giữ ở điểm đầu rồi kéo đến điểm cuối (đoạn thẳng, đường thẳng, tia, đường tròn, hình vuông, hình chữ nhật…).
+  - **Hướng dẫn từng bước** ("Bước 1/3: Nhấp đỉnh thứ nhất") và những chỗ nhấp được sẽ sáng nhẹ lên.
+  - Tam giác và tứ giác: chọn loại bằng hàng hình nhỏ (thường, cân, vuông, đều, biết 3 cạnh… / vuông, chữ nhật, bình hành, thoi, thang…).
+  - Hộp nhập số: mỗi số một ô có nhãn, nút gợi ý (3 cm, 60°…), thanh trượt cho góc, hình minh họa cạnh / góc đang nhập; nhập sai thì báo ngay trong hộp kèm cách sửa.
+  - Đa giác và **đường gấp khúc** (lớp 2) kết thúc bằng nhấp đúp, Enter hoặc nút "Xong".
+  - Thanh công cụ nổi cạnh đối tượng đang chọn (màu, nét đứt, số đo, ký hiệu bằng nhau, đổi tên, xóa); nhấp đúp vào tên để đổi tên ngay tại chỗ.
+
 ## Chuyển đổi với MathType
 
 Nút **MathType ⇄** trên Ribbon mở khung chuyển đổi.
@@ -110,7 +173,9 @@ Phông phải được cài trên máy để hiển thị đúng; máy chưa cà
 
 - [x] Giai đoạn 1–2: nền tảng add-in, trình soạn công thức, chèn và sửa công thức OMML
 - [ ] Bản offline: mirror Office.js cùng một server HTTPS cục bộ; bộ cài `.msi` (Windows) và `.pkg` (macOS) tự đăng ký add-in và cài phông
-- [ ] Giai đoạn 3: vẽ hình học (dựng hình động, xuất SVG kèm trạng thái để sửa lại)
+- [x] Giai đoạn 3: vẽ hình học phẳng 2D (dựng hình động, xuất SVG kèm trạng thái để sửa lại)
+- [x] Hình khối 3D theo cách vẽ SGK (hộp, lập phương, lăng trụ, chóp, trụ, nón, cầu; nét khuất)
+- [ ] Hình không gian dựng động (giao tuyến, thiết diện) cho lớp 11–12
 
 ## Giấy phép
 

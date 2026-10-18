@@ -18,6 +18,8 @@ export interface Settings {
   simple: boolean;
   /** New equations: MathType-style picture (exact look) or native Word equation. */
   kind: RenderKind;
+  /** Geometry editor: school year whose tools are shown (2–10, or 'all'). */
+  geoGrade?: number | 'all';
 }
 
 const KEY = 'mathstudio.settings.v3';

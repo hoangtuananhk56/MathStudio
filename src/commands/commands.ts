@@ -1,5 +1,6 @@
 /** Ribbon button handlers (function commands). */
 import { runConvert, runEditor, runRenumber, runToggleTex } from '../office/editor-dialog';
+import { runGeometryEditor, selectionIsFigure } from '../office/geometry';
 
 function command(run: () => Promise<void>) {
   return async (event: Office.AddinCommands.Event) => {
@@ -18,7 +19,10 @@ const handlers: Record<string, (event: Office.AddinCommands.Event) => Promise<vo
   insertDisplayEquation: command(() => runEditor('display')),
   insertRightNumberedEquation: command(() => runEditor('right')),
   insertLeftNumberedEquation: command(() => runEditor('left')),
-  editEquation: command(() => runEditor('inline')),
+  // "Edit" works on whatever is selected: a figure opens the geometry editor.
+  editEquation: command(async () => ((await selectionIsFigure()) ? runGeometryEditor() : runEditor('inline'))),
+  insertGeometry: command(runGeometryEditor),
+  editGeometry: command(runGeometryEditor),
   toggleTex: command(runToggleTex),
   updateEquationNumbers: command(runRenumber),
   convertEquation: command(runConvert),

@@ -1,0 +1,4 @@
+# scripts run on macOS / Linux keep Unix line endings
+*.sh text eol=lf
+*.command text eol=lf
+installer/macos/scripts/* text eol=lf

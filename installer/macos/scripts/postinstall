@@ -1,0 +1,19 @@
+#!/bin/bash
+# Runs as root after the package is installed: puts the add-in and the fonts in the
+# signed-in user's Word and Fonts folders, as that user (Word's sandbox folder must stay theirs).
+set -e
+APP="/Library/Application Support/MathStudio"
+USER_NAME=$(stat -f%Su /dev/console)
+if [ -z "$USER_NAME" ] || [ "$USER_NAME" = "root" ]; then USER_NAME="$USER"; fi
+HOME_DIR=$(dscl . -read "/Users/$USER_NAME" NFSHomeDirectory | awk '{print $2}')
+as_user() { sudo -u "$USER_NAME" "$@"; }
+
+# Word for Mac loads the add-ins whose manifest is in its "wef" folder
+WEF="$HOME_DIR/Library/Containers/com.microsoft.Word/Data/Documents/wef"
+as_user mkdir -p "$WEF"
+as_user cp "$APP/manifest.xml" "$WEF/MathStudio.manifest.xml"
+
+# math fonts for this user
+as_user mkdir -p "$HOME_DIR/Library/Fonts"
+for f in "$APP"/fonts/*.otf; do as_user cp "$f" "$HOME_DIR/Library/Fonts/"; done
+exit 0

@@ -1,0 +1,66 @@
+# Builds the installers when a version tag is pushed (git tag v1.0.0 && git push origin v1.0.0)
+# and attaches them to the GitHub release of that tag. The installers register the add-in
+# served by GitHub Pages (see pages.yml), so that site must be published too.
+name: Release installers
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build MathStudio-Setup-Windows.exe
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/windows/build.ps1 -SiteUrl "$env:SITE" -OutDir dist-installers
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist-installers/MathStudio-Setup-Windows.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build MathStudio-macOS.pkg
+        run: bash installer/macos/build-pkg.sh "$SITE" dist-installers "${GITHUB_REF_NAME#v}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist-installers/MathStudio-macOS.pkg
+
+  release:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installers/MathStudio-Setup-Windows.exe
+            installers/MathStudio-macOS.pkg
+          body: |
+            ## Cài đặt
+            - **Windows** (Word 2016 trở lên / Microsoft 365): tải `MathStudio-Setup-Windows.exe`, đóng Word, nhấp đúp để cài.
+            - **macOS** (Word 2016 cho Mac trở lên): tải `MathStudio-macOS.pkg`, đóng Word, nhấp chuột phải → Mở để cài.
+
+            Hướng dẫn chi tiết (kể cả cảnh báo của Windows / macOS khi mở file): [docs/CAI-DAT.md](https://github.com/${{ github.repository }}/blob/main/docs/CAI-DAT.md)

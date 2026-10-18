@@ -6,6 +6,12 @@ Add-in Office (Office.js) chạy trên **Word cho Windows, macOS và Word Online
 - Mỗi công thức được bọc trong một Content Control ẩn. Tag của Content Control chứa **mã LaTeX nguồn**, nên copy công thức sang tài liệu khác vẫn mở lại để sửa được.
 - Giao diện thân thiện cho trẻ từ 7 tuổi, phong cách Google/Apple, có chế độ **Cơ bản / Nâng cao** và hai ngôn ngữ **Việt / Anh**.
 
+## Tải về và cài đặt
+
+Tải bộ cài ở trang **[Releases](https://github.com/hoangtuananhk56/MathStudio/releases/latest)**: `MathStudio-Setup-Windows.exe` (Windows) hoặc `MathStudio-macOS.pkg` (macOS), đóng Word rồi mở file để cài. Hướng dẫn chi tiết: **[docs/CAI-DAT.md](docs/CAI-DAT.md)**.
+
+Bộ cài chỉ đăng ký add-in với Word (cùng phông chữ toán học và, trên Windows, công cụ nhấp đúp để sửa); MathStudio được tải từ GitHub Pages mỗi khi mở Word nên luôn là bản mới nhất.
+
 ## Hai dạng chèn công thức
 
 | | **Ảnh vector (mặc định, giống MathType)** | **Công thức Word (OMML)** |
@@ -179,6 +185,12 @@ npm run validate     # kiểm tra manifest
 npm run start        # cài chứng chỉ localhost, chạy server HTTPS và mở Word kèm add-in
 ```
 
+### Phát hành
+
+- Mỗi lần đẩy lên nhánh `main`, GitHub Actions build add-in và đăng lên GitHub Pages (`.github/workflows/pages.yml`, lần đầu bật **Settings → Pages → Source: GitHub Actions**). Người dùng nhận bản mới khi mở lại Word.
+- Bộ cài: tạo tag phiên bản, ví dụ `git tag v1.0.0 && git push origin v1.0.0`; GitHub Actions build bộ cài Windows và macOS rồi đưa vào trang Releases (`.github/workflows/release.yml`). Chỉ cần bộ cài mới khi manifest thay đổi (thêm nút, đổi tên…).
+- Build tay: `powershell -File installer/windows/build.ps1 -SiteUrl https://<user>.github.io/<repo>` (Windows) và `bash installer/macos/build-pkg.sh https://<user>.github.io/<repo>` (trên Mac); manifest cho một địa chỉ bất kỳ: `node scripts/make-manifest.mjs https://…`.
+
 ### Kiểm tra bằng Word thật (Windows, không cần chạy add-in)
 
 ```bash
@@ -200,7 +212,8 @@ Phông phải được cài trên máy để hiển thị đúng; máy chưa cà
 ## Lộ trình
 
 - [x] Giai đoạn 1–2: nền tảng add-in, trình soạn công thức, chèn và sửa công thức OMML
-- [ ] Bản offline: mirror Office.js cùng một server HTTPS cục bộ; bộ cài `.msi` (Windows) và `.pkg` (macOS) tự đăng ký add-in và cài phông
+- [x] Bộ cài Windows và macOS tự đăng ký add-in và cài phông (add-in chạy từ GitHub Pages)
+- [ ] Bản offline hoàn toàn: mirror Office.js cùng một server HTTPS cục bộ
 - [x] Giai đoạn 3: vẽ hình học phẳng 2D (dựng hình động, xuất SVG kèm trạng thái để sửa lại)
 - [x] Hình khối 3D theo cách vẽ SGK (hộp, lập phương, lăng trụ, chóp, trụ, nón, cầu; nét khuất)
 - [ ] Hình không gian dựng động (giao tuyến, thiết diện) cho lớp 11–12

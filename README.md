@@ -1,4 +1,4 @@
-# MathStudio — Soạn công thức Toán (và sắp tới: vẽ hình học) cho Microsoft Word
+# MathStudio — Soạn công thức và vẽ hình Toán cho Microsoft Word
 
 Add-in Office (Office.js) chạy trên **Word cho Windows, macOS và Word Online**.
 
@@ -181,6 +181,7 @@ npm install
 npm run dev          # xem trình soạn trong trình duyệt: http://localhost:3000/editor/index.html
 npm test             # 240+ test chuyển đổi (LaTeX → OMML → LaTeX)
 npm run build        # bản AppSource (Office.js lấy từ CDN của Microsoft) → dist/
+npm run build:offline  # bản offline (Office.js đóng gói sẵn trong office-js/) → dist-offline/
 npm run validate     # kiểm tra manifest
 npm run start        # cài chứng chỉ localhost, chạy server HTTPS và mở Word kèm add-in
 ```
@@ -190,6 +191,7 @@ npm run start        # cài chứng chỉ localhost, chạy server HTTPS và m�
 - Mỗi lần đẩy lên nhánh `main`, GitHub Actions build add-in và đăng lên GitHub Pages (`.github/workflows/pages.yml`, lần đầu bật **Settings → Pages → Source: GitHub Actions**). Người dùng nhận bản mới khi mở lại Word.
 - Bộ cài: tạo tag phiên bản, ví dụ `git tag v1.0.0 && git push origin v1.0.0`; GitHub Actions build bộ cài Windows và macOS rồi đưa vào trang Releases (`.github/workflows/release.yml`). Chỉ cần bộ cài mới khi manifest thay đổi (thêm nút, đổi tên…).
 - Build tay: `powershell -File installer/windows/build.ps1 -SiteUrl https://<user>.github.io/<repo>` (Windows) và `bash installer/macos/build-pkg.sh https://<user>.github.io/<repo>` (trên Mac); manifest cho một địa chỉ bất kỳ: `node scripts/make-manifest.mjs https://…`.
+- Bản offline: `npm run build:offline`, rồi `powershell -File installer/windows/build.ps1 -Offline` → `MathStudio-Setup-Windows-Offline.exe` (kèm `tools/server-win/MathStudioServer.exe`: server HTTPS chỉ nghe trên 127.0.0.1 / ::1 cổng 44317, tự tạo CA "MathStudio Local CA" và chứng chỉ localhost, xóa khóa của CA ngay sau khi ký). Trên Mac: `bash installer/macos/build-pkg.sh --offline` (server Swift + LaunchAgent, thử nghiệm). Office.js trong bản offline là bản gốc của Microsoft (gói `@microsoft/office-js`), giữ nguyên, kèm giấy phép ở `office-js/LICENSE.md`.
 
 ### Kiểm tra bằng Word thật (Windows, không cần chạy add-in)
 
@@ -213,10 +215,11 @@ Phông phải được cài trên máy để hiển thị đúng; máy chưa cà
 
 - [x] Giai đoạn 1–2: nền tảng add-in, trình soạn công thức, chèn và sửa công thức OMML
 - [x] Bộ cài Windows và macOS tự đăng ký add-in và cài phông (add-in chạy từ GitHub Pages)
-- [ ] Bản offline hoàn toàn: mirror Office.js cùng một server HTTPS cục bộ
+- [x] Bản offline hoàn toàn: Office.js đóng gói sẵn, server HTTPS cục bộ (https://localhost:44317) với chứng chỉ tạo riêng cho từng máy; bộ cài Windows (macOS: thử nghiệm)
 - [x] Giai đoạn 3: vẽ hình học phẳng 2D (dựng hình động, xuất SVG kèm trạng thái để sửa lại)
 - [x] Hình khối 3D theo cách vẽ SGK (hộp, lập phương, lăng trụ, chóp, trụ, nón, cầu; nét khuất)
-- [ ] Hình không gian dựng động (giao tuyến, thiết diện) cho lớp 11–12
+- [x] Hình không gian dựng động cho lớp 11–12: chóp, lăng trụ, hộp, tứ diện; điểm trên cạnh, giao điểm, giao tuyến, giao điểm đường – mặt, thiết diện, song song, hình chiếu; nét khuất tự đứt khi xoay hình; dựng từ đề bài
+- [x] Nhận diện từ ảnh, chạy offline: công thức, cả đề bài (chữ tiếng Việt + công thức), hình vẽ → hình dựng động
 
 ## Giấy phép
 

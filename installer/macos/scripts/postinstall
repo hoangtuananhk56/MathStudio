@@ -16,4 +16,9 @@ as_user cp "$APP/manifest.xml" "$WEF/MathStudio.manifest.xml"
 # math fonts for this user
 as_user mkdir -p "$HOME_DIR/Library/Fonts"
 for f in "$APP"/fonts/*.otf; do as_user cp "$f" "$HOME_DIR/Library/Fonts/"; done
+
+# the offline version: the add-in is served from this Mac
+if [ -f "$APP/offline" ]; then
+  "$(dirname "$0")/offline-setup" "$USER_NAME" "$(id -u "$USER_NAME")"
+fi
 exit 0

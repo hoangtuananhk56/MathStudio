@@ -36,6 +36,7 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@microsoft/office-js": "^1.1.110",
     "@types/node": "^22.20.5",
     "@types/office-js": "^1.0.612",
     "@types/react": "^18.3.31",

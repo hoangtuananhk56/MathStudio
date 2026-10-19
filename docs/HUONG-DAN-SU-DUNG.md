@@ -149,7 +149,7 @@ Chọn công thức → **Đổi dạng**. Dùng khi:
 
 ### Màn hình trình vẽ
 
-- **Thanh công cụ bên trái**: các nhóm công cụ **Cơ bản**, **Đường**, **Quan hệ**, **Tam giác**, **Tứ giác & đa giác**, **Đường tròn**, **Góc & ký hiệu**, **Hình khối (3D)**, **Biến hình**, **Khác**. Bấm vào nhóm để chọn công cụ cụ thể.
+- **Thanh công cụ bên trái**: các nhóm công cụ **Cơ bản**, **Đường**, **Quan hệ**, **Tam giác**, **Tứ giác & đa giác**, **Đường tròn**, **Góc & ký hiệu**, **Hình khối (3D)**, **Không gian (lớp 11–12)**, **Biến hình**, **Khác**. Bấm vào nhóm để chọn công cụ cụ thể.
 - **Thanh trên cùng**:
   - **Hình mẫu & đề bài**: hình vẽ sẵn theo lớp và chức năng gõ đề ra hình.
   - **Từ ảnh**: dựng hình từ ảnh.
@@ -179,9 +179,28 @@ Một vài công cụ hay dùng:
 | Đường tròn (tâm và điểm / tâm và bán kính / qua 3 điểm), tiếp tuyến, cung, hình quạt | nhóm **Đường tròn** |
 | Ký hiệu góc, góc vuông, vẽ góc có số đo cho trước, ký hiệu bằng nhau, hiện số đo | nhóm **Góc & ký hiệu** |
 | Hình hộp, lập phương, lăng trụ, hình chóp, trụ, nón, cầu (có nét khuất) | nhóm **Hình khối (3D)** |
+| Hình chóp, tứ diện, lăng trụ, hộp để dựng tiếp: giao điểm, giao tuyến, thiết diện, hình chiếu | nhóm **Không gian (lớp 11–12)**, xem [Hình không gian](#hình-không-gian-lớp-1112) |
 | Đối xứng trục, đối xứng tâm, phép quay, tịnh tiến, vị tự | nhóm **Biến hình** |
 | Chia hình thành phần bằng nhau và tô màu (phân số lớp 2–5) | **Chia phần và tô màu** (nhóm Tứ giác & đa giác) |
 | Trục số, đồ thị hàm số, chữ trên hình | nhóm **Khác** |
+
+### Hình không gian (lớp 11–12)
+
+Nhóm **Không gian (lớp 11–12)** vẽ hình chóp (đáy tam giác, tứ giác, hình bình hành, hình thang; chóp đều; cạnh bên vuông góc với đáy), tứ diện, lăng trụ, hình hộp, lập phương theo đúng cách vẽ của SGK. Các điểm có vị trí thật trong không gian nên dựng tiếp được:
+
+| Muốn dựng | Công cụ (nhấp lần lượt) |
+|---|---|
+| Trung điểm, trọng tâm, điểm chia cạnh theo tỉ số (ví dụ SM = 2MA) | **Trung điểm (không gian)**, **Trọng tâm tam giác (không gian)**, **Điểm chia đoạn theo tỉ số** (nhấp vào cạnh) |
+| Nối hai điểm (phần bị che tự vẽ nét đứt) | **Nối hai điểm (không gian)** |
+| Giao điểm của hai đường thẳng cùng nằm trong một mặt phẳng | **Giao điểm hai đường thẳng**: 4 điểm |
+| Giao điểm của đường thẳng và mặt phẳng | **Giao điểm của đường thẳng và mặt phẳng**: 2 điểm, rồi 3 điểm của mặt phẳng |
+| Giao tuyến của hai mặt phẳng, ví dụ (SAC) và (SBD) | **Giao tuyến của hai mặt phẳng**: 3 điểm, rồi 3 điểm |
+| Thiết diện của hình cắt bởi mặt phẳng (MNP) | **Thiết diện**: nhấp vào hình, rồi M, N, P. Thiết diện được tô màu, các đỉnh mới tự đặt tên |
+| Đường song song, hình chiếu của điểm lên mặt phẳng / đường thẳng | **Đường song song cắt một đường**, **Hình chiếu vuông góc lên mặt phẳng**, **Hình chiếu vuông góc lên đường thẳng** |
+
+Thanh trượt **Xoay hình** ở trên vùng vẽ quay cả hình để nhìn rõ hơn: nét khuất tự đổi thành nét đứt theo góc nhìn mới; **Như SGK** đưa về góc nhìn quen thuộc. Kéo một điểm trên cạnh thì điểm trượt dọc cạnh đó.
+
+Cũng có thể gõ đề, ví dụ: *Cho hình chóp S.ABCD có đáy ABCD là hình bình hành tâm O. Gọi M là trung điểm của SC. Tìm giao tuyến của (SAC) và (SBD). Tìm giao điểm I của AM và (SBD).* Phần trả lời (giao tuyến, giao điểm I) được đánh dấu **Thuộc đáp án**, nên bản Đề không có lời giải. Tab **Hình mẫu theo lớp** có sẵn vài hình không gian hay gặp.
 
 ### Sửa hình đang vẽ
 

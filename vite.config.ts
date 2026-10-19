@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { appendFileSync, mkdirSync } from 'node:fs';
+import { appendFileSync, cpSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const OFFICE_JS_CDN = 'https://officeapis.public.onecdn.static.microsoft/1/office.js';
@@ -8,14 +8,29 @@ const OFFICE_JS_CDN = 'https://officeapis.public.onecdn.static.microsoft/1/offic
 /**
  * Office.js comes from Microsoft's CDN for the AppSource (online) build.
  * The offline build (`--mode offline`) serves a bundled copy instead, so the
- * add-in works with no internet connection.
+ * add-in works with no internet connection: office.js, the Word host files and
+ * the Vietnamese and English strings, copied unmodified from @microsoft/office-js.
  */
-function officeJs(offline: boolean): Plugin {
+function officeJs(offline: boolean, outDir: string): Plugin {
+  const dist = resolve(import.meta.dirname, 'node_modules/@microsoft/office-js/dist');
+  const wanted = (f: string) =>
+    /^(office|o15apptofilemappingtable|es6-promise)\.js$/.test(f) || (/^word.*\.js$/.test(f) && !f.includes('.debug.'));
   return {
     name: 'office-js',
     transformIndexHtml(html) {
-      const src = offline ? './office-js/office.js' : OFFICE_JS_CDN;
+      // every page sits one folder down (editor/, taskpane/, …)
+      const src = offline ? '../office-js/office.js' : OFFICE_JS_CDN;
       return html.replace('%OFFICE_JS%', src);
+    },
+    closeBundle() {
+      if (!offline) return;
+      const out = resolve(outDir, 'office-js');
+      mkdirSync(out, { recursive: true });
+      for (const f of readdirSync(dist)) if (wanted(f)) cpSync(resolve(dist, f), resolve(out, f));
+      cpSync(resolve(dist, '../LICENSE.md'), resolve(out, 'LICENSE.md'));
+      for (const dir of ['telemetry', 'vi-vn', 'en-us']) {
+        cpSync(resolve(dist, dir), resolve(out, dir), { recursive: true, filter: (f) => !f.includes('.debug.') });
+      }
     },
   };
 }
@@ -62,6 +77,7 @@ var ce=console.error;console.error=function(){var a=[];for(var i=0;i<arguments.l
 
 export default defineConfig(async ({ mode, command }) => {
   const offline = mode === 'offline';
+  const outDir = resolve(import.meta.dirname, offline ? 'dist-offline' : 'dist');
   let https: { key: string; cert: string; ca: string } | undefined;
   if (command === 'serve' && process.env.HTTPS === '1') {
     const devCerts = await import('office-addin-dev-certs');
@@ -71,11 +87,11 @@ export default defineConfig(async ({ mode, command }) => {
     root: resolve(import.meta.dirname, 'src'),
     publicDir: resolve(import.meta.dirname, 'public'),
     base: './',
-    plugins: [react(), officeJs(offline), devClientLog()],
+    plugins: [react(), officeJs(offline, outDir), devClientLog()],
     server: { port: 3000, strictPort: true, https },
     preview: { port: 3000, strictPort: true, https },
     build: {
-      outDir: resolve(import.meta.dirname, offline ? 'dist-offline' : 'dist'),
+      outDir,
       emptyOutDir: true,
       // MathLive is ~800 kB; it only loads inside the editor dialog.
       chunkSizeWarningLimit: 1200,

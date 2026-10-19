@@ -1,0 +1,55 @@
+#!/bin/bash
+# Offline version only (experimental), run as root by postinstall with the signed-in user's
+# name and id: makes the certificate for https://localhost:44317, trusts it, and starts the
+# local server for that user. The CA's private key is deleted right after it signs, so it
+# cannot sign anything else. Apple accepts at most 825 days for a server certificate:
+# installing the package again makes a new one.
+set -e
+PATH=/usr/bin:/bin:/usr/sbin:/sbin # the system openssl (LibreSSL), whatever else is installed
+APP="/Library/Application Support/MathStudio"
+USER_NAME="$1"
+USER_ID="$2"
+T=$(mktemp -d)
+trap 'rm -rf "$T"' EXIT
+
+cat > "$T/cert.cnf" <<'EOF'
+[req]
+distinguished_name = dn
+prompt = no
+[dn]
+O = MathStudio
+CN = MathStudio Local CA
+[ca]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign
+subjectKeyIdentifier = hash
+[leaf]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:localhost,IP:127.0.0.1,IP:::1
+EOF
+openssl req -x509 -new -newkey rsa:2048 -nodes -sha256 -days 7300 -config "$T/cert.cnf" -extensions ca \
+  -keyout "$T/ca.key" -out "$T/ca.crt" 2>/dev/null
+openssl req -new -newkey rsa:2048 -nodes -sha256 -subj "/O=MathStudio/CN=localhost" \
+  -keyout "$T/leaf.key" -out "$T/leaf.csr" 2>/dev/null
+openssl x509 -req -sha256 -days 825 -in "$T/leaf.csr" -CA "$T/ca.crt" -CAkey "$T/ca.key" -set_serial "0x$(openssl rand -hex 15)" \
+  -extfile "$T/cert.cnf" -extensions leaf -out "$T/leaf.crt" 2>/dev/null
+rm -f "$T/ca.key"
+openssl pkcs12 -export -inkey "$T/leaf.key" -in "$T/leaf.crt" -name "MathStudio (localhost)" \
+  -out "$APP/localhost.p12" -passout pass:mathstudio
+chmod 644 "$APP/localhost.p12"
+cp "$T/ca.crt" "$APP/MathStudio-Local-CA.cer"
+
+# an older MathStudio CA goes first, then this one is trusted for TLS
+while security find-certificate -c "MathStudio Local CA" /Library/Keychains/System.keychain >/dev/null 2>&1; do
+  security delete-certificate -c "MathStudio Local CA" /Library/Keychains/System.keychain >/dev/null 2>&1 || break
+done
+security add-trusted-cert -d -r trustRoot -p ssl -k /Library/Keychains/System.keychain "$T/ca.crt"
+
+# the server, for this user now and at every sign-in (the agent is in /Library/LaunchAgents)
+PLIST=/Library/LaunchAgents/vn.mathstudio.server.plist
+chown root:wheel "$PLIST"
+chmod 644 "$PLIST"
+launchctl bootout "gui/$USER_ID" "$PLIST" >/dev/null 2>&1 || true
+launchctl bootstrap "gui/$USER_ID" "$PLIST" || launchctl asuser "$USER_ID" sudo -u "$USER_NAME" launchctl load "$PLIST"

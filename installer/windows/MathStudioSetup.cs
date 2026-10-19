@@ -8,6 +8,10 @@
 //   - the double-click / keyboard shortcut helper, started at sign-in;
 //   - an entry in Settings > Apps to remove it all.
 //
+// The offline version (built with /define:OFFLINE) also carries the add-in itself: it goes in
+// %LOCALAPPDATA%\MathStudio\site and MathStudioServer serves it on https://localhost:44317,
+// started at sign-in, with a certificate made for this computer (Windows asks to trust it).
+//
 // MathStudioSetup.exe            install (or update)
 // MathStudioSetup.exe /uninstall remove
 // /quiet                         no questions, no messages
@@ -16,6 +20,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+#if OFFLINE
+using System.IO.Compression;
+#endif
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -37,6 +44,12 @@ namespace MathStudio
         private const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\MathStudio";
         private const string FontsKey = @"Software\Microsoft\Windows NT\CurrentVersion\Fonts";
         private const string HelperName = "MathStudioHotkeys";
+        private const string ServerName = "MathStudioServer";
+#if OFFLINE
+        private const bool Offline = true;
+#else
+        private const bool Offline = false;
+#endif
 
         /** Embedded font file -> name registered with Windows. */
         private static readonly string[,] Fonts =
@@ -89,7 +102,10 @@ namespace MathStudio
                     "• Tab MathStudio trên Word: soạn công thức, vẽ hình, nhận diện từ ảnh.\n" +
                     "• Phông chữ toán học (STIX Two Math, TeX Gyre Termes Math, Latin Modern Math).\n" +
                     "• Nhấp đúp vào công thức / hình để sửa, phím tắt như MathType.\n\n" +
-                    "Không cần quyền quản trị. Cần Word 2016 trở lên (khuyên dùng Microsoft 365) và kết nối mạng khi mở Word.",
+                    (Offline
+                        ? "Bản offline: chạy hoàn toàn trên máy này, không cần mạng. Windows sẽ hỏi có tin cậy chứng chỉ \"MathStudio Local CA\" không: hãy chọn Yes (chứng chỉ chỉ dùng cho địa chỉ localhost của máy này).\n\n"
+                        : "") +
+                    "Không cần quyền quản trị. Cần Word 2016 trở lên (khuyên dùng Microsoft 365)" + (Offline ? "." : " và kết nối mạng khi mở Word."),
                     Title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
                 return 2;
             if (!WordClosed("cài đặt")) return 2;
@@ -97,6 +113,18 @@ namespace MathStudio
             string dir = InstallDir;
             Directory.CreateDirectory(dir);
             StopHelper();
+#if OFFLINE
+            // the add-in itself, served from this computer
+            string site = Path.Combine(dir, "site");
+            if (Directory.Exists(site)) Directory.Delete(site, true);
+            using (var zip = new ZipArchive(Open("site.zip"), ZipArchiveMode.Read)) zip.ExtractToDirectory(site);
+            string server = Path.Combine(dir, ServerName + ".exe");
+            WriteResource(ServerName + ".exe", server);
+            if (Run(server, "--install-cert") != 0)
+                throw new InvalidOperationException("Chưa tin cậy chứng chỉ \"MathStudio Local CA\" nên Word không mở được bổ trợ. Hãy chạy lại bộ cài và chọn Yes khi Windows hỏi.");
+            using (var k = Registry.CurrentUser.CreateSubKey(RunKey)) k.SetValue(ServerName, "\"" + server + "\"");
+            Process.Start(new ProcessStartInfo(server) { UseShellExecute = false, WorkingDirectory = dir });
+#endif
 
             // the add-in, registered with Word
             string manifestPath = Path.Combine(dir, "manifest.xml");
@@ -141,7 +169,7 @@ namespace MathStudio
                 k.SetValue("QuietUninstallString", "\"" + kept + "\" /uninstall /quiet");
                 k.SetValue("NoModify", 1, RegistryValueKind.DWord);
                 k.SetValue("NoRepair", 1, RegistryValueKind.DWord);
-                k.SetValue("EstimatedSize", 2600, RegistryValueKind.DWord);
+                k.SetValue("EstimatedSize", Offline ? 95000 : 2600, RegistryValueKind.DWord);
             }
 
             Show("Đã cài xong MathStudio.\n\n" +
@@ -161,7 +189,15 @@ namespace MathStudio
 
             StopHelper();
             string dir = InstallDir;
-            using (var k = Registry.CurrentUser.OpenSubKey(RunKey, true)) if (k != null) k.DeleteValue(HelperName, false);
+            using (var k = Registry.CurrentUser.OpenSubKey(RunKey, true))
+                if (k != null)
+                {
+                    k.DeleteValue(HelperName, false);
+                    k.DeleteValue(ServerName, false);
+                }
+            // the offline version's certificate (Windows asks to confirm removing it)
+            string server = Path.Combine(dir, ServerName + ".exe");
+            if (File.Exists(server)) Run(server, "--remove-cert");
             using (var k = Registry.CurrentUser.OpenSubKey(WefKey, true))
             {
                 // every registration of a MathStudio manifest installed here
@@ -210,13 +246,24 @@ namespace MathStudio
             }
         }
 
+        /** Stops the helper and the local server, so their files can be replaced. */
         private static void StopHelper()
         {
-            foreach (var p in Process.GetProcessesByName(HelperName))
-            {
-                try { p.Kill(); p.WaitForExit(3000); } catch { }
-            }
+            foreach (var name in new[] { HelperName, ServerName })
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { p.Kill(); p.WaitForExit(3000); } catch { }
+                }
             Thread.Sleep(200);
+        }
+
+        private static int Run(string exe, string args)
+        {
+            using (var p = Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = false, CreateNoWindow = true }))
+            {
+                p.WaitForExit();
+                return p.ExitCode;
+            }
         }
 
         private static Stream Open(string name)

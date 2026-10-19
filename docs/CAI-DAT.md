@@ -19,6 +19,10 @@ Vào trang **[Releases](https://github.com/hoangtuananhk56/MathStudio/releases/l
 |---|---|
 | Windows | `MathStudio-Setup-Windows.exe` |
 | macOS | `MathStudio-macOS.pkg` |
+| Windows, **bản offline** | `MathStudio-Setup-Windows-Offline.exe` |
+| macOS, **bản offline** (thử nghiệm) | `MathStudio-macOS-Offline.pkg` |
+
+Bản thường nhỏ gọn, tự cập nhật nhưng cần mạng khi mở Word. **Bản offline** (khoảng 45 MB) chứa sẵn toàn bộ MathStudio, dùng được **không cần mạng** (phòng máy, nơi mạng yếu); muốn bản mới thì tải bộ cài mới và cài đè. Xem [Bản offline](#bản-offline).
 
 ## Cài trên Windows
 
@@ -47,6 +51,17 @@ Trên Mac, sửa công thức / hình bằng cách đặt con trỏ vào đó r�
 
 **Gỡ cài đặt**: mở Finder → **Đi → Đi tới thư mục…** → gõ `/Library/Application Support/MathStudio` → nhấp đúp **Uninstall MathStudio.command**.
 
+## Bản offline
+
+Cài giống bản thường (các bước ở trên), thêm một bước:
+
+- **Windows**: trong lúc cài, Windows hỏi **"Bạn có muốn cài chứng chỉ này không?"** cho chứng chỉ **MathStudio Local CA** → bấm **Yes**. Chứng chỉ được tạo riêng trên máy bạn, chỉ dùng cho địa chỉ `https://localhost:44317` mà Word dùng để mở MathStudio trên chính máy này; nó không ký được gì khác. Bấm No thì Word không mở được MathStudio: chạy lại bộ cài và chọn Yes.
+- **macOS** (thử nghiệm): trình cài đặt có thể hỏi mật khẩu máy để tin cậy chứng chỉ. Chứng chỉ trên Mac có hạn khoảng 2 năm (quy định của Apple); hết hạn thì cài lại bộ cài.
+
+Bản offline chạy một chương trình nhỏ **MathStudioServer** cùng Windows / macOS (không có cửa sổ), chỉ nhận kết nối từ chính máy này. Gỡ cài đặt sẽ gỡ cả chương trình này và chứng chỉ (Windows hỏi xác nhận xóa chứng chỉ: bấm Yes).
+
+Không cài cả bản thường và bản offline cùng lúc: cài bản nào thì bản đó thay bản kia.
+
 ## Dùng trên Word trên web (word.office.com)
 
 Không cần cài gì, chỉ cần nạp MathStudio một lần:
@@ -67,7 +82,7 @@ MathStudio tự cập nhật: mỗi lần mở Word là bản mới nhất. Ch�
 | Hiện tượng | Cách xử lý |
 |---|---|
 | Không thấy tab MathStudio | Đóng hẳn Word (cả các cửa sổ Word khác) rồi mở lại. Vẫn chưa có: xem bước 5 (Windows) / bước 4 (Mac) ở trên. |
-| Tab MathStudio báo lỗi tải, trang trắng | Kiểm tra kết nối mạng, rồi mở lại Word. |
+| Tab MathStudio báo lỗi tải, trang trắng | Kiểm tra kết nối mạng, rồi mở lại Word. Bản offline: đăng xuất rồi đăng nhập lại Windows (để MathStudioServer chạy), hoặc cài lại và chọn Yes khi được hỏi về chứng chỉ. |
 | Công thức hiện phông khác trên máy khác | Máy đó chưa có phông STIX Two Math: cài MathStudio trên máy đó, hoặc dùng dạng **Ảnh (MathType)** khi chèn. |
 | Nhận diện từ ảnh báo "phiên bản Word chưa hỗ trợ" | Cập nhật Word lên Microsoft 365 / Office 2021 trở lên. |
 | Nhấp đúp không mở được trình sửa (Windows) | Kiểm tra biểu tượng MathStudio có ở khay hệ thống không; nếu không, mở menu Start → gõ *MathStudio*, hoặc cài lại. |
